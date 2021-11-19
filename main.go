@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/apitoolkit/apitoolkit-go-client/routes"
 )
 

@@ -11,7 +11,7 @@ func Routes() http.Handler {
 	muX := mux.NewRouter()
 
 	muX.HandleFunc("/create-topic/{project_id}", handlers.Repo.CreateTopic).Methods("POST")
-	muX.HandleFunc("/publish-message", handlers.Repo.PublishMessage).Methods("POST")
+	muX.HandleFunc("/publish-message/{project_id}/{topic_name}", handlers.Repo.PublishMessage).Methods("POST")
 
 	return muX
 }

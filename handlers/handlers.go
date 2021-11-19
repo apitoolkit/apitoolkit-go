@@ -37,13 +37,14 @@ func(c *Repository) CreateTopic(w http.ResponseWriter, req *http.Request) {
 
 	err = utils.ParseJSON(req, &data)
 	if err != nil {
-		utils.Error(http.StatusBadRequest, w)
+		utils.Error(http.StatusInternalServerError, w)
 		return
 	}
 
 	exists, _ := c.TopicExists(data.TopicName, projectID)
 
-	if exists {
+	// !exists returns true 
+	if !exists {
 		utils.Error(http.StatusBadRequest, w)
 		return
 	}
@@ -51,7 +52,7 @@ func(c *Repository) CreateTopic(w http.ResponseWriter, req *http.Request) {
 	_, err = client.CreateTopic(ctx, data.TopicName)
 	if err != nil {
 		c.Config.Log.Println("Topic could not be created")
-		utils.Error(http.StatusBadRequest, w)
+		utils.Error(http.StatusInternalServerError, w)
 		return
 	}
 
@@ -73,7 +74,7 @@ func(c *Repository) TopicExists(name, projectID string) (bool, error) {
 
 	exists, err := topic.Exists(ctx)
 	if err != nil {
-		c.Config.Log.Fatal(err)
+		c.Config.Log.Println(err)
 	}
 
 	if exists {
@@ -88,16 +89,23 @@ func(c *Repository) TopicExists(name, projectID string) (bool, error) {
 func(c *Repository) PublishMessage(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	topicName := mux.Vars(req)["topic_name"]
+	projectID := mux.Vars(req)["project_id"]
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1 * time.Minute)
 	defer cancel()
 
-	// topicName := mux.Vars(req)["topic_name"]
+	client, err := pubsub.NewClient(ctx, projectID)
+	if err != nil {
+		c.Config.Log.Fatal(err)
+	}
+	defer client.Close()
 
 	data := c.Config.Data
 
-	err := utils.ParseJSON(req, &data)
+	err = utils.ParseJSON(req, &data)
 	if err != nil {
-		utils.Error(http.StatusBadRequest, w)
+		utils.Error(http.StatusInternalServerError, w)
 		return
 	}
 
@@ -105,12 +113,25 @@ func(c *Repository) PublishMessage(w http.ResponseWriter, req *http.Request) {
 		Data: []byte(fmt.Sprintf(data.Message)),
 	}
 
-	var topic *pubsub.Topic
+	topic := client.Topic(topicName)
+
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		c.Config.Log.Println(err)
+	}
+
+	// if exists returns false 
+	if exists {
+		c.Config.Log.Println("topic does not exist")
+		utils.Error(http.StatusBadRequest, w)
+		return
+	}
 
 	_, err = topic.Publish(ctx, msg).Get(ctx)
 	if err != nil {
-		utils.Error(http.StatusBadRequest, w)
+		utils.Error(http.StatusInternalServerError, w)
 		c.Config.Log.Println("could not publish message")
+		return
 	}
 
 	utils.Success("message published", nil, w)

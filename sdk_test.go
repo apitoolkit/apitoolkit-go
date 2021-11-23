@@ -2,94 +2,83 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"os"
+	"reflect"
 	"testing"
-	"time"
-
-	"cloud.google.com/go/pubsub"
-	"github.com/joho/godotenv"
 )
 
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
+}
+
 func TestInitializeClient(t *testing.T) {
-	_ = godotenv.Load(".env")
-	_, err := pubsub.NewClient(context.Background(), ProjectID)
+	client, err := initializeClient(context.Background())
 	if err != nil {
 		t.Error(err)
+	}
+
+	clientType, _ := fmt.Println(reflect.TypeOf(client))
+	typeValue, _ := fmt.Println("*pubsub.Client")
+
+	if clientType != typeValue {
+		t.Errorf("expected %v but got %v", typeValue, clientType)
 	}
 }
 
 func TestInitializeTopic(t *testing.T) {
-	client, _ := pubsub.NewClient(context.Background(), ProjectID)
-	defer client.Close()
-
-	topicRef := client.Topic(TopicID)
-	defer topicRef.Stop()
-
-	exists, err := topicRef.Exists(context.Background())
+	topic, err := initializeTopic(context.Background())
 	if err != nil {
 		t.Error(err)
 	}
 
-	if !exists {
-		_, err = client.CreateTopic(context.Background(), TopicID)
-		if err != nil {
-			t.Error(err)
-		}
+	topicType, _ := fmt.Println(reflect.TypeOf(topic))
+	typeValue, _ := fmt.Println("*pubsub.Topic")
+
+	if topicType != typeValue {
+		t.Errorf("expected %v but got %v", typeValue, topicType)
 	}
-}
 
-func TestObjectJSON(t *testing.T) {
-	var result map[string]interface{}
-
-	err := json.Unmarshal([]byte(`{
-		"title": "blog post",
-		"body": "this is a blog post",
-		"likes": "98",
-		"comments": "45"
-	}`), &result)
-
+	client, err := initializeClient(context.Background())
 	if err != nil {
-		t.Error(t)
+		t.Error(err)
 	}
-}
-
-func TestPublishMessage(t *testing.T) {
-	var data map[string]interface{}
-
-	json.Unmarshal([]byte(`{
-		"title": "blog post",
-		"body": "this is a blog post",
-		"likes": "98",
-		"comments": "45"
-	}`), &data)
-
-	client, _ := pubsub.NewClient(context.Background(), ProjectID)
 	defer client.Close()
 
 	topicRef := client.Topic(TopicID)
 
-	exists, _ := topicRef.Exists(context.Background())
-
-	msgg := &pubsub.Message{
-		ID:              ProjectID,
-		Data:            []byte(fmt.Sprintf("payload: %v", data)),
-		PublishTime:     time.Now(),
+	exists, err := topicRef.Exists(context.Background())
+	if err != nil {
+		fmt.Println(topicRef.ID())
+		t.Error(err)
+	}
+	
+	if !exists {
+		t.Error("returned topic instance does not exist when it does")
 	}
 
-	if !exists {
-		topic, _ := client.CreateTopic(context.Background(), TopicID)
+	topic, err = client.CreateTopic(context.Background(), TopicID)
+		if err != nil {
+			
+		} else {
+			fmt.Println(topic.ID())
+			t.Error("expected an error but got none")
+		}
 
-		topic.Publish(context.Background(), msgg).Get(context.Background())
-		defer topic.Stop()
+	
+}
 
-		fmt.Println(string(msgg.Data))
+func TestPublishMessage(t *testing.T) {
+	dat := Data{
+		ID:          "testId",
+		StatusCode:  "404",
+		Body:        "test code",
+		RespMessage: "success",
+	}
 
-	} else {
-		
-		topicRef.Publish(context.Background(), msgg).Get(context.Background())
-		defer topicRef.Stop()
+	err := PublishMessage(context.Background(), dat)
 
-		fmt.Println(string(msgg.Data))
+	if err != nil {
+		t.Error(err)
 	}
 }

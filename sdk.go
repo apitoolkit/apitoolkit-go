@@ -3,18 +3,25 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/joho/godotenv"
 )
 
-// set TopicID and ProjectID to reflect project use; topic1 and project1 are test values
+// set TopicID and ProjectID to reflect project use; topic1 and pubsub1 are test values
 var (
 	TopicID = "topic1"
 	ProjectID = "pubsub1"
-) 
+)
+
+// Data represents test request and response struct
+type Data struct {
+	ID			string
+	StatusCode	string
+	Body		string
+	RespMessage	string  
+}
 
 // initializeClient creates and return a new pubsub client instance
 func initializeClient(ctx context.Context) (*pubsub.Client, error) {
@@ -54,38 +61,26 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 	return topic, err
 }
 
-// objectJSON unmarshals the data to be published
-func objectJSON(payload string) (map[string]interface{}, error) {
-	var result map[string]interface{}
-
-	err := json.Unmarshal([]byte(payload), &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, err
-}
 
 // PublishMessage publishes payload to a gcp cloud console 
-func PublishMessage(ctx context.Context, payload string) error {
+func PublishMessage(ctx context.Context, payload Data) (error) {
 	topic, err := initializeTopic(ctx)
 	if err != nil {
 		return err
 	}
 
-	data, err := objectJSON(payload)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
 	msgg := &pubsub.Message{
 		ID:              ProjectID,
-		Data:            []byte(fmt.Sprintf("payload: %v", data)),
+		Data:            data,
 		PublishTime:     time.Now(),
 	}
 
-	topic.Publish(ctx, msgg).Get(ctx)
-	defer topic.Stop()
+	topic.Publish(ctx, msgg)
 
 	return err
 }

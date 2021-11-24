@@ -3,6 +3,9 @@ package apitoolkit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -15,12 +18,13 @@ var (
 	ProjectID = "pubsub1"
 )
 
-// Data represents test request and response struct
-type Data struct {
-	ID			string
-	StatusCode	string
-	Body		string
-	RespMessage	string  
+// Data represents request and response details
+type data struct {
+	ResponseHeader		http.Header
+	RequestHeader		http.Header
+	RequestBody			io.ReadCloser
+	ResponseBody		io.ReadCloser
+	StatusCode			int
 }
 
 // initializeClient creates and return a new pubsub client instance
@@ -65,7 +69,7 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 var topicInstance, errTopicInstance = initializeTopic(context.Background())
 
 // PublishMessage publishes payload to a gcp cloud console 
-func PublishMessage(ctx context.Context, payload Data) (error) {
+func PublishMessage(ctx context.Context, payload data) (error) {
 
 	if errTopicInstance != nil {
 		return errTopicInstance
@@ -86,3 +90,28 @@ func PublishMessage(ctx context.Context, payload Data) (error) {
 
 	return err
 }
+
+// ToolkitMiddleware collects request and response parameters
+func ToolkitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// responseHeader := req.Response.Header
+		reqHeader := req.Header
+		reqBody := req.Body
+		// resBody := req.Response.Body
+		// statusCode := req.Response.StatusCode
+
+		payload := data {
+			// ResponseHeader: responseHeader,
+			RequestHeader: reqHeader,
+			RequestBody: reqBody,
+			// ResponseBody: resBody,
+			// StatusCode: statusCode,
+		}
+
+		PublishMessage(context.Background(), payload)
+
+		fmt.Println(payload)
+		next.ServeHTTP(res, req)
+	})
+}
+

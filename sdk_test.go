@@ -64,8 +64,6 @@ func TestInitializeTopic(t *testing.T) {
 			fmt.Println(topic.ID())
 			t.Error("expected an error but got none")
 		}
-
-	
 }
 
 func TestPublishMessage(t *testing.T) {

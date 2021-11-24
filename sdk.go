@@ -61,12 +61,14 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 	return topic, err
 }
 
+// initializes the topic instance
+var topicInstance, errTopicInstance = initializeTopic(context.Background())
 
 // PublishMessage publishes payload to a gcp cloud console 
 func PublishMessage(ctx context.Context, payload Data) (error) {
-	topic, err := initializeTopic(ctx)
-	if err != nil {
-		return err
+
+	if errTopicInstance != nil {
+		return errTopicInstance
 	}
 
 	data, err := json.Marshal(payload)
@@ -80,7 +82,7 @@ func PublishMessage(ctx context.Context, payload Data) (error) {
 		PublishTime:     time.Now(),
 	}
 
-	topic.Publish(ctx, msgg)
+	topicInstance.Publish(ctx, msgg)
 
 	return err
 }

@@ -1,11 +1,13 @@
 package apitoolkit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -18,7 +20,7 @@ var (
 	ProjectID = "pubsub1"
 )
 
-// Data represents request and response details
+// data represents request and response details
 type data struct {
 	ResponseHeader		http.Header
 	RequestHeader		http.Header
@@ -91,27 +93,29 @@ func PublishMessage(ctx context.Context, payload data) (error) {
 	return err
 }
 
-// ToolkitMiddleware collects request and response parameters
+// ToolkitMiddleware collects request, response parameters and publishes the payload
 func ToolkitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		// responseHeader := req.Response.Header
+		
+		rec := httptest.NewRecorder()
+		next.ServeHTTP(rec, req)
+		
+		io.Copy(res, rec.Result().Body)
+
+		responseHeader := res.Header()
 		reqHeader := req.Header
-		reqBody := req.Body
-		// resBody := req.Response.Body
-		// statusCode := req.Response.StatusCode
+
+		buf, _ := ioutil.ReadAll(req.Body)
+		requestBody := ioutil.NopCloser(bytes.NewBuffer(buf))
 
 		payload := data {
-			// ResponseHeader: responseHeader,
+			ResponseHeader: responseHeader,
 			RequestHeader: reqHeader,
-			RequestBody: reqBody,
-			// ResponseBody: resBody,
-			// StatusCode: statusCode,
+			RequestBody: requestBody,
+			ResponseBody: rec.Result().Body,
+			StatusCode: rec.Result().StatusCode,
 		}
 
 		PublishMessage(context.Background(), payload)
-
-		fmt.Println(payload)
-		next.ServeHTTP(res, req)
 	})
 }
-

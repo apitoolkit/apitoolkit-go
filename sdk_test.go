@@ -69,8 +69,8 @@ func TestInitializeTopic(t *testing.T) {
 }
 
 func TestPublishMessage(t *testing.T) {
-	msg := data{
-
+	msg := data {
+		StatusCode: 2,
 	}
 
 	err := PublishMessage(context.Background(), msg)
@@ -84,7 +84,7 @@ type httpHandler struct{}
 
 func (hH *httpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {}
 
-func TestMiddleware(t *testing.T) {
+func TestMiddlewareType(t *testing.T) {
 	var myH httpHandler
 	h := ToolkitMiddleware(&myH)
 
@@ -94,11 +94,20 @@ func TestMiddleware(t *testing.T) {
 	default:
 		t.Error(fmt.Sprintf("type is not http.Handler, but is %T", v))
 	}
+}
 
-	req := httptest.NewRequest(http.MethodGet, "https://www.wikipedia.com", nil)
+func TestMiddleware(t *testing.T) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/get", func(res http.ResponseWriter, req *http.Request) {
+		
+		res.Write([]byte("today is a good day"))
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/get", nil)
 	res := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {})
+	handler := http.HandlerFunc(func(resp http.ResponseWriter, reqs *http.Request) {})
 	middleware := ToolkitMiddleware(handler)
 	middleware.ServeHTTP(res, req)
 }

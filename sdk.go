@@ -35,7 +35,6 @@ func initializeClient(ctx context.Context) (*pubsub.Client, error) {
 	_ = godotenv.Load(".env")
 	client, err := pubsub.NewClient(ctx, ProjectID)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -46,7 +45,6 @@ func initializeClient(ctx context.Context) (*pubsub.Client, error) {
 func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 	client, err := initializeClient(ctx)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	defer client.Close()
@@ -55,7 +53,6 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 
 	exists, err := topicRef.Exists(ctx)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	
@@ -65,7 +62,7 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 
 	topic, err := client.CreateTopic(ctx, TopicID)
 		if err != nil {
-			fmt.Println(err)
+
 			return nil, err
 		}
 
@@ -85,8 +82,6 @@ func PublishMessage(ctx context.Context, payload data) (error) {
 
 	data, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(err)
 		return err
 	}
 

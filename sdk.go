@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -62,7 +61,6 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 
 	topic, err := client.CreateTopic(ctx, TopicID)
 		if err != nil {
-
 			return nil, err
 		}
 
@@ -76,7 +74,6 @@ var topicInstance, errTopicInstance = initializeTopic(context.Background())
 func PublishMessage(ctx context.Context, payload data) (error) {
 
 	if errTopicInstance != nil {
-		fmt.Println(errTopicInstance)
 		return errTopicInstance
 	}
 

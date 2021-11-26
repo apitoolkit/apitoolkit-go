@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,67 +15,73 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// set TopicID and ProjectID to reflect project use; topic1 and pubsub1 are test values
-var (
-	TopicID = "topic1"
-	ProjectID = "pubsub1"
+const (
+	TopicID = "apitoolkit-go-client"
 )
 
 // data represents request and response details
 type data struct {
-	ResponseHeader		http.Header
-	RequestHeader		http.Header
-	RequestBody			io.ReadCloser
-	ResponseBody		io.ReadCloser
-	StatusCode			int
+	ResponseHeader http.Header
+	RequestHeader  http.Header
+	RequestBody    io.ReadCloser
+	ResponseBody   io.ReadCloser
+	StatusCode     int
 }
 
-// initializeClient creates and return a new pubsub client instance
-func initializeClient(ctx context.Context) (*pubsub.Client, error) {
+type Client struct {
+	pubsubClient *pubsub.Client
+	goReqsTopic  *pubsub.Topic
+	config       *Config
+}
+
+type Config struct {
+	ProjectID string
+}
+
+func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	_ = godotenv.Load(".env")
-	client, err := pubsub.NewClient(ctx, ProjectID)
+	client, err := pubsub.NewClient(ctx, cfg.ProjectID)
 	if err != nil {
 		return nil, err
 	}
 
-	return client, err
+	topic, err := initializeTopic(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		pubsubClient: client,
+		goReqsTopic:  topic,
+		config:       &cfg,
+	}, nil
+}
+
+func (c *Client) Close() error {
+  c.goReqsTopic.Stop()
+	return c.pubsubClient.Close()
 }
 
 // initializeTopic receives the instantiated client object from initialize client and returns a new topic instance
-func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
-	client, err := initializeClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
-
+func initializeTopic(ctx context.Context, client *pubsub.Client) (*pubsub.Topic, error) {
 	topicRef := client.Topic(TopicID)
 
 	exists, err := topicRef.Exists(ctx)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if exists {
 		return topicRef, err
 	}
 
-	topic, err := client.CreateTopic(ctx, TopicID)
-		if err != nil {
-			return nil, err
-		}
-
-	return topic, err
+	return client.CreateTopic(ctx, TopicID)
 }
 
-// initializes the topic instance
-var topicInstance, errTopicInstance = initializeTopic(context.Background())
-
-// PublishMessage publishes payload to a gcp cloud console 
-func PublishMessage(ctx context.Context, payload data) (error) {
-
-	if errTopicInstance != nil {
-		return errTopicInstance
+// PublishMessage publishes payload to a gcp cloud console
+func (c *Client) PublishMessage(ctx context.Context, payload data) error {
+	if c.goReqsTopic == nil {
+		return errors.New("topic is not initialized")
 	}
 
 	data, err := json.Marshal(payload)
@@ -83,23 +90,21 @@ func PublishMessage(ctx context.Context, payload data) (error) {
 	}
 
 	msgg := &pubsub.Message{
-		ID:              ProjectID,
-		Data:            data,
-		PublishTime:     time.Now(),
+		ID:          c.config.ProjectID,
+		Data:        data,
+		PublishTime: time.Now(),
 	}
 
-	topicInstance.Publish(ctx, msgg)
-
+	c.goReqsTopic.Publish(ctx, msgg)
 	return err
 }
 
 // ToolkitMiddleware collects request, response parameters and publishes the payload
-func ToolkitMiddleware(next http.Handler) http.Handler {
+func (c *Client) ToolkitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		
 		rec := httptest.NewRecorder()
 		next.ServeHTTP(rec, req)
-		
+
 		io.Copy(res, rec.Result().Body)
 
 		responseHeader := res.Header()
@@ -108,14 +113,14 @@ func ToolkitMiddleware(next http.Handler) http.Handler {
 		buf, _ := ioutil.ReadAll(req.Body)
 		requestBody := ioutil.NopCloser(bytes.NewBuffer(buf))
 
-		payload := data {
+		payload := data{
 			ResponseHeader: responseHeader,
-			RequestHeader: reqHeader,
-			RequestBody: requestBody,
-			ResponseBody: rec.Result().Body,
-			StatusCode: rec.Result().StatusCode,
+			RequestHeader:  reqHeader,
+			RequestBody:    requestBody,
+			ResponseBody:   rec.Result().Body,
+			StatusCode:     rec.Result().StatusCode,
 		}
 
-		PublishMessage(context.Background(), payload)
+		c.PublishMessage(req.Context(), payload)
 	})
 }

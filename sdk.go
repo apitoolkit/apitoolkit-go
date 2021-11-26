@@ -1,8 +1,13 @@
 package apitoolkit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -15,12 +20,13 @@ var (
 	ProjectID = "pubsub1"
 )
 
-// Data represents test request and response struct
-type Data struct {
-	ID			string
-	StatusCode	string
-	Body		string
-	RespMessage	string  
+// data represents request and response details
+type data struct {
+	ResponseHeader		http.Header
+	RequestHeader		http.Header
+	RequestBody			io.ReadCloser
+	ResponseBody		io.ReadCloser
+	StatusCode			int
 }
 
 // initializeClient creates and return a new pubsub client instance
@@ -65,7 +71,7 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 var topicInstance, errTopicInstance = initializeTopic(context.Background())
 
 // PublishMessage publishes payload to a gcp cloud console 
-func PublishMessage(ctx context.Context, payload Data) (error) {
+func PublishMessage(ctx context.Context, payload data) (error) {
 
 	if errTopicInstance != nil {
 		return errTopicInstance
@@ -85,4 +91,31 @@ func PublishMessage(ctx context.Context, payload Data) (error) {
 	topicInstance.Publish(ctx, msgg)
 
 	return err
+}
+
+// ToolkitMiddleware collects request, response parameters and publishes the payload
+func ToolkitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		
+		rec := httptest.NewRecorder()
+		next.ServeHTTP(rec, req)
+		
+		io.Copy(res, rec.Result().Body)
+
+		responseHeader := res.Header()
+		reqHeader := req.Header
+
+		buf, _ := ioutil.ReadAll(req.Body)
+		requestBody := ioutil.NopCloser(bytes.NewBuffer(buf))
+
+		payload := data {
+			ResponseHeader: responseHeader,
+			RequestHeader: reqHeader,
+			RequestBody: requestBody,
+			ResponseBody: rec.Result().Body,
+			StatusCode: rec.Result().StatusCode,
+		}
+
+		PublishMessage(context.Background(), payload)
+	})
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -34,6 +35,7 @@ func initializeClient(ctx context.Context) (*pubsub.Client, error) {
 	_ = godotenv.Load(".env")
 	client, err := pubsub.NewClient(ctx, ProjectID)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -44,6 +46,7 @@ func initializeClient(ctx context.Context) (*pubsub.Client, error) {
 func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 	client, err := initializeClient(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	defer client.Close()
@@ -52,6 +55,7 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 
 	exists, err := topicRef.Exists(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	
@@ -61,6 +65,7 @@ func initializeTopic(ctx context.Context) (*pubsub.Topic, error) {
 
 	topic, err := client.CreateTopic(ctx, TopicID)
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 
@@ -74,11 +79,14 @@ var topicInstance, errTopicInstance = initializeTopic(context.Background())
 func PublishMessage(ctx context.Context, payload data) (error) {
 
 	if errTopicInstance != nil {
+		fmt.Println(errTopicInstance)
 		return errTopicInstance
 	}
 
 	data, err := json.Marshal(payload)
 	if err != nil {
+		fmt.Println(err)
+		fmt.Println(err)
 		return err
 	}
 
@@ -100,20 +108,21 @@ func ToolkitMiddleware(next http.Handler) http.Handler {
 		rec := httptest.NewRecorder()
 		next.ServeHTTP(rec, req)
 		
-		io.Copy(res, rec.Result().Body)
-
-		responseHeader := res.Header()
 		reqHeader := req.Header
-
-		buf, _ := ioutil.ReadAll(req.Body)
+		resHeader := res.Header()
+		resp := rec.Result()
+		body, _ := io.ReadAll(resp.Body)
+		responseBody := ioutil.NopCloser(bytes.NewBuffer(body))
+		buf, _ := io.ReadAll(req.Body)
 		requestBody := ioutil.NopCloser(bytes.NewBuffer(buf))
 
-		payload := data {
-			ResponseHeader: responseHeader,
-			RequestHeader: reqHeader,
-			RequestBody: requestBody,
-			ResponseBody: rec.Result().Body,
-			StatusCode: rec.Result().StatusCode,
+
+		payload := data{
+			ResponseHeader: resHeader,
+			RequestHeader:  reqHeader,
+			RequestBody:    requestBody,
+			ResponseBody:   responseBody,
+			StatusCode:     resp.StatusCode,
 		}
 
 		PublishMessage(context.Background(), payload)

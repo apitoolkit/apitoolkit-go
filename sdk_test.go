@@ -1,12 +1,16 @@
 package apitoolkit
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -69,12 +73,39 @@ func TestInitializeTopic(t *testing.T) {
 }
 
 func TestPublishMessage(t *testing.T) {
-	msg := data {
-		StatusCode: 2,
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/toolkit-test", func(res http.ResponseWriter, req *http.Request) {
+		
+		io.WriteString(res, "<html><body><Hello World!</body></html>")
+	})
+
+	reader := strings.NewReader("data=dummy request body")
+	req := httptest.NewRequest(http.MethodPost, "/toolkit-test", reader)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+
+	mux.ServeHTTP(res, req)
+
+	reqHeader := req.Header
+	resHeader := res.Header()
+	resp := res.Result()
+	body, _ := io.ReadAll(resp.Body)
+	responseBody := ioutil.NopCloser(bytes.NewBuffer(body))
+	buf, _ := io.ReadAll(req.Body)
+	requestBody := ioutil.NopCloser(bytes.NewBuffer(buf))
+
+	payload := data{
+		ResponseHeader: resHeader,
+		RequestHeader:  reqHeader,
+		RequestBody:    requestBody,
+		ResponseBody:   responseBody,
+		StatusCode:     resp.StatusCode,
 	}
 
-	err := PublishMessage(context.Background(), msg)
+	fmt.Println(payload)
 
+	err := PublishMessage(context.Background(), payload)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,17 +128,15 @@ func TestMiddlewareType(t *testing.T) {
 }
 
 func TestMiddleware(t *testing.T) {
-	mux := http.NewServeMux()
 
-	mux.HandleFunc("/get", func(res http.ResponseWriter, req *http.Request) {
-		
-		res.Write([]byte("today is a good day"))
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/get", nil)
+	reader := strings.NewReader("number=2")
+	req := httptest.NewRequest(http.MethodPost, "/get", reader)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(func(resp http.ResponseWriter, reqs *http.Request) {})
+	handler := http.HandlerFunc(func(resp http.ResponseWriter, reqs *http.Request) {
+		io.WriteString(res, "<html><body><Hello World!</body></html>")
+	})
 	middleware := ToolkitMiddleware(handler)
 	middleware.ServeHTTP(res, req)
 }

@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	TopicID = "apitoolkit-go-client"
+  projectID = "past-3"
+	topicID = "apitoolkit-go-client"
 )
 
 // data represents request and response details
@@ -35,12 +36,12 @@ type Client struct {
 }
 
 type Config struct {
-	ProjectID string
+	APIKey string
 }
 
 func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	_ = godotenv.Load(".env")
-	client, err := pubsub.NewClient(ctx, cfg.ProjectID)
+	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func (c *Client) Close() error {
 
 // initializeTopic receives the instantiated client object from initialize client and returns a new topic instance
 func initializeTopic(ctx context.Context, client *pubsub.Client) (*pubsub.Topic, error) {
-	topicRef := client.Topic(TopicID)
+	topicRef := client.Topic(topicID)
 
 	exists, err := topicRef.Exists(ctx)
 	if err != nil {
@@ -75,7 +76,7 @@ func initializeTopic(ctx context.Context, client *pubsub.Client) (*pubsub.Topic,
 		return topicRef, err
 	}
 
-	return client.CreateTopic(ctx, TopicID)
+	return client.CreateTopic(ctx, topicID)
 }
 
 // PublishMessage publishes payload to a gcp cloud console
@@ -90,7 +91,6 @@ func (c *Client) PublishMessage(ctx context.Context, payload data) error {
 	}
 
 	msgg := &pubsub.Message{
-		ID:          c.config.ProjectID,
 		Data:        data,
 		PublishTime: time.Now(),
 	}

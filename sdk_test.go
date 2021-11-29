@@ -117,7 +117,7 @@ func TestMain(m *testing.M) {
 
 func TestAPIToolkitWorkflow(t *testing.T) {
 _ = godotenv.Load(".env")
-	client, err := NewClient(context.Background(), Config{ProjectID: "past-3"})
+	client, err := NewClient(context.Background(), Config{APIKey: "past-3"})
 	assert.NoError(t, err)
 	defer client.Close()
 

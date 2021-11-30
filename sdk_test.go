@@ -2,15 +2,17 @@ package apitoolkit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/imroc/req"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
-"github.com/joho/godotenv"
 )
 
 func TestMain(m *testing.M) {
@@ -116,20 +118,78 @@ func TestMain(m *testing.M) {
 // }
 
 func TestAPIToolkitWorkflow(t *testing.T) {
-_ = godotenv.Load(".env")
+	_ = godotenv.Load(".env")
 	client, err := NewClient(context.Background(), Config{APIKey: "past-3"})
 	assert.NoError(t, err)
 	defer client.Close()
 
-	middlewareFn := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, client")
+	handlerFn := func(w http.ResponseWriter, r *http.Request) {
+    body, _ := ioutil.ReadAll(r.Body)
+    _ = body
+    // fmt.Println("HANDLER BODY", string(body))
+
+
+		jsonByte, err := json.Marshal(exampleData)
+		assert.NoError(t, err)
+
+        w.Header().Add("Content-Type", "application/json")
+w.Header().Add("X-API-KEY", "applicationKey")
+w.WriteHeader(http.StatusAccepted)
+
+		w.Write(jsonByte)
+
 	}
 
-	ts := httptest.NewServer(client.ToolkitMiddleware(http.HandlerFunc(middlewareFn)))
+	ts := httptest.NewServer(client.ToolkitMiddleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	r, err := req.Get(ts.URL)
+	r, err := req.Post(ts.URL, 
+    req.Param{"param1": "abc", "param2": 123}, 
+    req.Header{
+      "Content-Type": "application/json",
+      "X-API-KEY": "past-3",
+    }, 
+    req.BodyJSON(exampleData2),
+  )
 	assert.NoError(t, err)
 
 	fmt.Println(r.Dump())
+}
+var exampleData = map[string]interface{}{
+	"status": "success",
+	"data": map[string]interface{}{
+		"message": "hello world",
+		"account_data": map[string]interface{}{
+			"batch_number":           12345,
+			"account_id":             "123456789",
+			"account_name":           "test account",
+			"account_type":           "test",
+			"account_status":         "active",
+			"account_balance":        "100.00",
+			"account_currency":       "USD",
+			"account_created_at":     "2020-01-01T00:00:00Z",
+			"account_updated_at":     "2020-01-01T00:00:00Z",
+			"account_deleted_at":     "2020-01-01T00:00:00Z",
+			"possible_account_types": []string{"test", "staging", "production"},
+		},
+	},
+}
+var exampleData2 = map[string]interface{}{
+	"status": "request",
+	"send": map[string]interface{}{
+		"message": "hello world",
+		"account_data": map[string]interface{}{
+			"batch_number":           12345,
+			"account_id":             "123456789",
+			"account_name":           "test account",
+			"account_type":           "test",
+			"account_status":         "active",
+			"account_balance":        "100.00",
+			"account_currency":       "USD",
+			"account_created_at":     "2020-01-01T00:00:00Z",
+			"account_updated_at":     "2020-01-01T00:00:00Z",
+			"account_deleted_at":     "2020-01-01T00:00:00Z",
+			"possible_account_types": []string{"test", "staging", "production"},
+		},
+	},
 }

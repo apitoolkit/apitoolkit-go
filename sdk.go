@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,20 +12,32 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/joho/godotenv"
+	"github.com/kr/pretty"
 )
 
 const (
-  projectID = "past-3"
-	topicID = "apitoolkit-go-client"
+	projectID = "past-3"
+	topicID   = "apitoolkit-go-client"
 )
 
 // data represents request and response details
 type data struct {
-	ResponseHeader http.Header
-	RequestHeader  http.Header
-	RequestBody    io.ReadCloser
-	ResponseBody   io.ReadCloser
-	StatusCode     int
+	Host              string              `json:"host"`
+	Method            string              `json:"method"`
+	Referer           string              `json:"referer"`
+	URLPath           string              `json:"url_path"`
+	ProtoMajor        int                 `json:"proto_major"`
+	ProtoMinor        int                 `json:"proto_minor"`
+	DurationMicroSecs int64               `json:"duration_micro_secs"`
+	Duration          time.Duration       `json:"duration"`
+	ResponseHeaders   map[string][]string `json:"response_headers"`
+	RequestHeaders    map[string][]string `json:"request_headers"`
+	RequestBody       []byte              `json:"request_body"`
+	ResponseBody      []byte              `json:"response_body"`
+	RequestBodyStr    string              `json:"request_body_str"`
+	ResponseBodyStr   string              `json:"response_body_str"`
+
+	StatusCode int `json:"status_code"`
 }
 
 type Client struct {
@@ -59,7 +70,7 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 }
 
 func (c *Client) Close() error {
-  c.goReqsTopic.Stop()
+	c.goReqsTopic.Stop()
 	return c.pubsubClient.Close()
 }
 
@@ -99,28 +110,57 @@ func (c *Client) PublishMessage(ctx context.Context, payload data) error {
 	return err
 }
 
+// "ident":       r.Host,
+// 				"method":      r.Method,
+// 				"referer":     r.Referer(),
+// 				"request_id":  r.Header.Get("X-Request-Id"),
+// 				"status_code": record.status,
+// 				"url":         r.URL.Path,
+// 				"useragent":   r.UserAgent(),
+// 				"version":     fmt.Sprintf("%d.%d", r.ProtoMajor, r.ProtoMinor),
+
 // ToolkitMiddleware collects request, response parameters and publishes the payload
 func (c *Client) ToolkitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		reqBuf, _ := ioutil.ReadAll(req.Body)
+		req.Body.Close()
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
+
 		rec := httptest.NewRecorder()
+		start := time.Now()
 		next.ServeHTTP(rec, req)
 
-		io.Copy(res, rec.Result().Body)
+		recRes := rec.Result()
+		// io.Copy(res, recRes.Body)
+		for k, v := range recRes.Header {
+			for _, vv := range v {
+				res.Header().Add(k, vv)
+			}
+		}
+		resBody, _ := ioutil.ReadAll(recRes.Body)
+		res.WriteHeader(recRes.StatusCode)
+		res.Write(resBody)
 
-		responseHeader := res.Header()
-		reqHeader := req.Header
-
-		buf, _ := ioutil.ReadAll(req.Body)
-		requestBody := ioutil.NopCloser(bytes.NewBuffer(buf))
-
+		since := time.Since(start)
 		payload := data{
-			ResponseHeader: responseHeader,
-			RequestHeader:  reqHeader,
-			RequestBody:    requestBody,
-			ResponseBody:   rec.Result().Body,
-			StatusCode:     rec.Result().StatusCode,
+			Host:              req.Host,
+			Referer:           req.Referer(),
+			Method:            req.Method,
+			ProtoMajor:        req.ProtoMajor,
+			ProtoMinor:        req.ProtoMinor,
+			ResponseHeaders:   recRes.Header,
+			RequestHeaders:    req.Header,
+			RequestBodyStr:    string(reqBuf),
+			ResponseBodyStr:   string(resBody),
+			RequestBody:       (reqBuf),
+			ResponseBody:      (resBody),
+			StatusCode:        recRes.StatusCode,
+			Duration:          since,
+			DurationMicroSecs: since.Microseconds(),
 		}
 
+		pretty.Println(payload)
 		c.PublishMessage(req.Context(), payload)
 	})
 }
+

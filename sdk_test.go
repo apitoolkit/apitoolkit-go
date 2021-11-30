@@ -124,17 +124,16 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 	defer client.Close()
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
-    body, _ := ioutil.ReadAll(r.Body)
-    _ = body
-    // fmt.Println("HANDLER BODY", string(body))
-
+		body, _ := ioutil.ReadAll(r.Body)
+		_ = body
+		// fmt.Println("HANDLER BODY", string(body))
 
 		jsonByte, err := json.Marshal(exampleData)
 		assert.NoError(t, err)
 
-        w.Header().Add("Content-Type", "application/json")
-w.Header().Add("X-API-KEY", "applicationKey")
-w.WriteHeader(http.StatusAccepted)
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("X-API-KEY", "applicationKey")
+		w.WriteHeader(http.StatusAccepted)
 
 		w.Write(jsonByte)
 
@@ -143,18 +142,19 @@ w.WriteHeader(http.StatusAccepted)
 	ts := httptest.NewServer(client.ToolkitMiddleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	r, err := req.Post(ts.URL, 
-    req.Param{"param1": "abc", "param2": 123}, 
-    req.Header{
-      "Content-Type": "application/json",
-      "X-API-KEY": "past-3",
-    }, 
-    req.BodyJSON(exampleData2),
-  )
+	r, err := req.Post(ts.URL,
+		req.Param{"param1": "abc", "param2": 123},
+		req.Header{
+			"Content-Type": "application/json",
+			"X-API-KEY":    "past-3",
+		},
+		req.BodyJSON(exampleData2),
+	)
 	assert.NoError(t, err)
 
 	fmt.Println(r.Dump())
 }
+
 var exampleData = map[string]interface{}{
 	"status": "success",
 	"data": map[string]interface{}{

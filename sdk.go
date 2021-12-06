@@ -11,8 +11,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/render"
 	"github.com/joho/godotenv"
 	"github.com/kr/pretty"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -37,7 +40,7 @@ type data struct {
 	RequestBodyStr    string              `json:"request_body_str"`
 	ResponseBodyStr   string              `json:"response_body_str"`
 
-	StatusCode int `json:"status_code"`
+	StatusCode 		  int 				  `json:"status_code"`
 }
 
 type Client struct {
@@ -164,3 +167,97 @@ func (c *Client) ToolkitMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+
+func (c *Client) GinToolkitMiddleware() gin.HandlerFunc {
+	return func(g *gin.Context) {
+		reqBuf, _ := ioutil.ReadAll(g.Request.Body)
+		g.Request.Body.Close()
+		g.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
+
+		rec := httptest.NewRecorder()
+		start := time.Now()
+
+		g.Next()
+
+		recRes := rec.Result()
+		
+		for k, v := range recRes.Header {
+			for _, vv := range v {
+				g.Header(k, vv)
+			}
+		}
+		resBody, _ := ioutil.ReadAll(recRes.Body)
+		g.Render(recRes.StatusCode, render.Data{
+			ContentType: "",
+			Data:        []byte(resBody),
+		})
+
+		since := time.Since(start)
+		payload := data{
+			Host:              g.Request.Host,
+			Referer:           g.Request.Referer(),
+			Method:            g.Request.Method,
+			ProtoMajor:        g.Request.ProtoMajor,
+			ProtoMinor:        g.Request.ProtoMinor,
+			ResponseHeaders:   recRes.Header,
+			RequestHeaders:    g.Request.Header,
+			RequestBodyStr:    string(reqBuf),
+			ResponseBodyStr:   string(resBody),
+			RequestBody:       (reqBuf),
+			ResponseBody:      (resBody),
+			StatusCode:        recRes.StatusCode,
+			Duration:          since,
+			DurationMicroSecs: since.Microseconds(),
+		}
+
+		pretty.Println(payload)
+		c.PublishMessage(g.Request.Context(), payload)
+	}
+}
+
+func (c *Client) EchoToolkitMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(e echo.Context) error {
+			reqBuf, _ := ioutil.ReadAll(e.Request().Body)
+			e.Request().Body.Close()
+			e.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
+
+			rec := httptest.NewRecorder()
+			start := time.Now()
+
+			recRes := rec.Result()
+			
+			for k, v := range recRes.Header {
+				for _, vv := range v {
+					e.Response().Header().Add(k, vv)
+				}
+			}
+			resBody, _ := ioutil.ReadAll(recRes.Body)
+			e.Response().WriteHeader(recRes.StatusCode)
+			e.Response().Write(resBody)
+
+			since := time.Since(start)
+			payload := data{
+				Host:              e.Request().Host,
+				Referer:           e.Request().Referer(),
+				Method:            e.Request().Method,
+				ProtoMajor:        e.Request().ProtoMajor,
+				ProtoMinor:        e.Request().ProtoMinor,
+				ResponseHeaders:   recRes.Header,
+				RequestHeaders:    e.Request().Header,
+				RequestBodyStr:    string(reqBuf),
+				ResponseBodyStr:   string(resBody),
+				RequestBody:       (reqBuf),
+				ResponseBody:      (resBody),
+				StatusCode:        recRes.StatusCode,
+				Duration:          since,
+				DurationMicroSecs: since.Microseconds(),
+			}
+
+			pretty.Println(payload)
+			c.PublishMessage(e.Request().Context(), payload)
+			
+			return next(e)
+		}
+	}
+}

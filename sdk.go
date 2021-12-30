@@ -25,6 +25,8 @@ const (
 
 // data represents request and response details
 type data struct {
+	Timestamp		  time.Time		      `json:"timestamp"`
+	ProjectID		  string			  `json:"project_id"`
 	Host              string              `json:"host"`
 	Method            string              `json:"method"`
 	Referer           string              `json:"referer"`
@@ -50,7 +52,8 @@ type Client struct {
 }
 
 type Config struct {
-	APIKey string
+	APIKey 		string
+	ProjectID	string
 }
 
 func NewClient(ctx context.Context, cfg Config) (*Client, error) {
@@ -146,6 +149,8 @@ func (c *Client) ToolkitMiddleware(next http.Handler) http.Handler {
 
 		since := time.Since(start)
 		payload := data{
+			Timestamp:		   time.Now(),
+			ProjectID:		   c.config.ProjectID,
 			Host:              req.Host,
 			Referer:           req.Referer(),
 			Method:            req.Method,
@@ -162,7 +167,6 @@ func (c *Client) ToolkitMiddleware(next http.Handler) http.Handler {
 			DurationMicroSecs: since.Microseconds(),
 		}
 
-		pretty.Println(payload)
 		c.PublishMessage(req.Context(), payload)
 	})
 }
@@ -194,6 +198,8 @@ func (c *Client) GinToolkitMiddleware() gin.HandlerFunc {
 
 		since := time.Since(start)
 		payload := data{
+			Timestamp:		   time.Now(),
+			ProjectID:		   c.config.ProjectID,
 			Host:              g.Request.Host,
 			Referer:           g.Request.Referer(),
 			Method:            g.Request.Method,
@@ -210,7 +216,6 @@ func (c *Client) GinToolkitMiddleware() gin.HandlerFunc {
 			DurationMicroSecs: since.Microseconds(),
 		}
 
-		pretty.Println(payload)
 		c.PublishMessage(g.Request.Context(), payload)
 	}
 }
@@ -238,6 +243,8 @@ func (c *Client) EchoToolkitMiddleware() echo.MiddlewareFunc {
 
 			since := time.Since(start)
 			payload := data{
+				Timestamp:		   time.Now(),
+				ProjectID:		   c.config.ProjectID,
 				Host:              e.Request().Host,
 				Referer:           e.Request().Referer(),
 				Method:            e.Request().Method,
@@ -254,9 +261,8 @@ func (c *Client) EchoToolkitMiddleware() echo.MiddlewareFunc {
 				DurationMicroSecs: since.Microseconds(),
 			}
 
-			pretty.Println(payload)
 			c.PublishMessage(e.Request().Context(), payload)
-			
+						
 			return next(e)
 		}
 	}

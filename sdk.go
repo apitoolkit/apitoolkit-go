@@ -40,7 +40,6 @@ type data struct {
 	ResponseBody      []byte              `json:"response_body"`
 	RequestBodyStr    string              `json:"request_body_str"`
 	ResponseBodyStr   string              `json:"response_body_str"`
-
 	StatusCode 		  int 				  `json:"status_code"`
 }
 

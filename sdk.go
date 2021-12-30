@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
 	"github.com/joho/godotenv"
-	"github.com/kr/pretty"
 	"github.com/labstack/echo/v4"
 )
 
@@ -262,7 +261,7 @@ func (c *Client) EchoToolkitMiddleware() echo.MiddlewareFunc {
 			}
 
 			c.PublishMessage(e.Request().Context(), payload)
-						
+
 			return next(e)
 		}
 	}

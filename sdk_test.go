@@ -10,8 +10,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
 	"github.com/joho/godotenv"
+	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,140 +21,94 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// func TestInitializeClient(t *testing.T) {
-// 	client, err := initializeClient(context.Background())
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	clientType, _ := fmt.Println(reflect.TypeOf(client))
-// 	typeValue, _ := fmt.Println("*pubsub.Client")
-
-// 	if clientType != typeValue {
-// 		t.Errorf("expected %v but got %v", typeValue, clientType)
-// 	}
-// }
-
-// func TestInitializeTopic(t *testing.T) {
-// 	topic, err := initializeTopic(context.Background())
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	topicType, _ := fmt.Println(reflect.TypeOf(topic))
-// 	typeValue, _ := fmt.Println("*pubsub.Topic")
-
-// 	if topicType != typeValue {
-// 		t.Errorf("expected %v but got %v", typeValue, topicType)
-// 	}
-
-// 	client, err := initializeClient(context.Background())
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	defer client.Close()
-
-// 	topicRef := client.Topic(TopicID)
-
-// 	exists, err := topicRef.Exists(context.Background())
-// 	if err != nil {
-// 		fmt.Println(topicRef.ID())
-// 		t.Error(err)
-// 	}
-
-// 	if !exists {
-// 		t.Error("returned topic instance does not exist when it does")
-// 	}
-
-// 	topic, err = client.CreateTopic(context.Background(), TopicID)
-// 	if err != nil {
-
-// 	} else {
-// 		fmt.Println(topic.ID())
-// 		t.Error("expected an error but got none")
-// 	}
-// }
-
-// func TestPublishMessage(t *testing.T) {
-// 	msg := data{
-// 		StatusCode: 2,
-// 	}
-
-// 	err := PublishMessage(context.Background(), msg)
-
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// }
-
-// type httpHandler struct{}
-
-// func (hH *httpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {}
-
-// func TestMiddlewareType(t *testing.T) {
-// 	var myH httpHandler
-// 	h := ToolkitMiddleware(&myH)
-
-// 	switch v := h.(type) {
-// 	case http.Handler:
-
-// 	default:
-// 		t.Error(fmt.Sprintf("type is not http.Handler, but is %T", v))
-// 	}
-// }
-
-// func TestMiddleware(t *testing.T) {
-// 	mux := http.NewServeMux()
-
-// 	mux.HandleFunc("/get", func(res http.ResponseWriter, req *http.Request) {
-
-// 		res.Write([]byte("today is a good day"))
-// 	})
-
-// 	req := httptest.NewRequest(http.MethodGet, "/get", nil)
-// 	res := httptest.NewRecorder()
-
-// 	handler := http.HandlerFunc(func(resp http.ResponseWriter, reqs *http.Request) {})
-// 	middleware := ToolkitMiddleware(handler)
-// 	middleware.ServeHTTP(res, req)
-// }
-
 func TestAPIToolkitWorkflow(t *testing.T) {
 	_ = godotenv.Load(".env")
-	client, err := NewClient(context.Background(), Config{APIKey: "past-3"})
-	assert.NoError(t, err)
+	// client, err := NewClient(context.Background(), Config{RootURL:"http://localhost:8080", APIKey: "lK5KJZcYOngzy4dK0qZsSDke9DieSoae6bu/17hd9zgA8I/D"})
+	client, err := NewClient(context.Background(), Config{APIKey: "laVIfc0ZPywzyNMfhaZsS2xJ9GHBTdqeubvtgepdpzkCpt/C"}) // prod test
+	if !assert.NoError(t, err) {
+		t.Fail()
+		return
+	}
 	defer client.Close()
 
-	handlerFn := func(w http.ResponseWriter, r *http.Request) {
-		body, _ := ioutil.ReadAll(r.Body)
-		_ = body
-		// fmt.Println("HANDLER BODY", string(body))
+	t.Run("test golang native server middleware", func(t *testing.T) {
+		var publishCalled bool
+		client.PublishMessage = func(ctx context.Context, payload Payload) error {
+			publishCalled = true
+			pretty.Println("payload", payload)
+			return nil
+		}
 
-		jsonByte, err := json.Marshal(exampleData)
+		handlerFn := func(w http.ResponseWriter, r *http.Request) {
+			body, err := ioutil.ReadAll(r.Body)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, body)
+
+			jsonByte, err := json.Marshal(exampleData)
+			assert.NoError(t, err)
+
+			w.Header().Add("Content-Type", "application/json")
+			w.Header().Add("X-API-KEY", "applicationKey")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(jsonByte)
+		}
+
+		ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
+		defer ts.Close()
+
+		_, err = req.Post(ts.URL+"/test",
+			req.Param{"param1": "abc", "param2": 123},
+			req.Header{
+				"Content-Type": "application/json",
+				"X-API-KEY":    "past-3",
+			},
+			req.BodyJSON(exampleData2),
+		)
 		assert.NoError(t, err)
+		assert.True(t, publishCalled)
+	})
+	t.Run("test gin server middleware", func(t *testing.T) {
+		var publishCalled bool
+		client.PublishMessage = func(ctx context.Context, payload Payload) error {
+			publishCalled = true
+			pretty.Println("payload", payload)
+			return nil
+		}
 
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("X-API-KEY", "applicationKey")
-		w.WriteHeader(http.StatusAccepted)
+		router := gin.New()
+		router.Use(client.GinMiddleware)
+		router.POST("/:slug/test", func(c *gin.Context) {
+			body, err := ioutil.ReadAll(c.Request.Body)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, body)
 
-		w.Write(jsonByte)
+			c.Header("Content-Type", "application/json")
+			c.Header("X-API-KEY", "applicationKey")
+			c.JSON(http.StatusAccepted, exampleData)
 
-	}
+		})
 
-	ts := httptest.NewServer(client.ToolkitMiddleware(http.HandlerFunc(handlerFn)))
-	defer ts.Close()
+		router.NoRoute(func(c *gin.Context) {
+			fmt.Println("NO ROUTE HANDLER")
+		})
 
-	r, err := req.Post(ts.URL,
-		req.Param{"param1": "abc", "param2": 123},
-		req.Header{
-			"Content-Type": "application/json",
-			"X-API-KEY":    "past-3",
-		},
-		req.BodyJSON(exampleData2),
-	)
-	assert.NoError(t, err)
+		ts := httptest.NewServer(router)
+		defer ts.Close()
 
-	fmt.Println(r.Dump())
+		fmt.Println("ROOT URL", ts.URL)
+		resp, err := req.Post(ts.URL+"/slug-value/test",
+			req.Param{"param1": "abc", "param2": 123},
+			req.Header{
+				"Content-Type": "application/json",
+				"X-API-KEY":    "past-3",
+			},
+			req.BodyJSON(exampleData2),
+		)
+		assert.NoError(t, err)
+		assert.True(t, publishCalled)
+		pretty.Println(resp.Dump())
+	})
+
 }
 
 var exampleData = map[string]interface{}{

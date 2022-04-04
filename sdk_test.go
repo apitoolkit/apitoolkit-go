@@ -23,8 +23,8 @@ func TestMain(m *testing.M) {
 
 func TestAPIToolkitWorkflow(t *testing.T) {
 	_ = godotenv.Load(".env")
-	// client, err := NewClient(context.Background(), Config{RootURL:"http://localhost:8080", APIKey: "lK5KJZcYOngzy4dK0qZsSDke9DieSoae6bu/17hd9zgA8I/D"})
-	client, err := NewClient(context.Background(), Config{APIKey: "laVIfc0ZPywzyNMfhaZsS2xJ9GHBTdqeubvtgepdpzkCpt/C"}) // prod test
+	client, err := NewClient(context.Background(), Config{RootURL: "http://localhost:8080", APIKey: "xvUfL8MfaHwzm9YZgqZsGW1L9DnBR9eetbu51L9ZpzxUp4iV"})
+	// client, err := NewClient(context.Background(), Config{APIKey: "laVIfc0ZPywzyNMfhaZsS2xJ9GHBTdqeubvtgepdpzkCpt/C"}) // prod test
 	if !assert.NoError(t, err) {
 		t.Fail()
 		return
@@ -108,7 +108,44 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 		assert.True(t, publishCalled)
 		pretty.Println(resp.Dump())
 	})
+	t.Run("test gin server middleware with GET request", func(t *testing.T) {
+		var publishCalled bool
+		client.PublishMessage = func(ctx context.Context, payload Payload) error {
+			publishCalled = true
+			pretty.Println("payload", payload)
+			return nil
+		}
 
+		router := gin.New()
+		router.Use(client.GinMiddleware)
+		router.GET("/:slug/test", func(c *gin.Context) {
+			body, err := ioutil.ReadAll(c.Request.Body)
+			assert.NoError(t, err)
+			fmt.Println(string(body))
+
+			c.Header("Content-Type", "application/json")
+			c.Header("X-API-KEY", "applicationKey")
+			c.JSON(http.StatusAccepted, exampleData)
+		})
+
+		router.NoRoute(func(c *gin.Context) {
+			fmt.Println("NO ROUTE HANDLER")
+		})
+
+		ts := httptest.NewServer(router)
+		defer ts.Close()
+
+		resp, err := req.Get(ts.URL+"/slug-value/test",
+			req.QueryParam{"param1": "abc", "param2": 123},
+			req.Header{
+				"Content-Type": "application/json",
+				"X-API-KEY":    "past-3",
+			},
+		)
+		assert.NoError(t, err)
+		assert.True(t, publishCalled)
+		pretty.Println(resp.Dump())
+	})
 }
 
 var exampleData = map[string]interface{}{

@@ -20,25 +20,29 @@ import (
 
 const (
 	topicID = "apitoolkit-go-client"
+	SDKType = "go_gin"
 )
 
 // Payload represents request and response details
 type Payload struct {
-	Timestamp         time.Time           `json:"timestamp"`
-	ProjectID         string              `json:"project_id"`
-	Host              string              `json:"host"`
-	Method            string              `json:"method"`
-	Referer           string              `json:"referer"`
-	URLPath           string              `json:"url_path"`
-	ProtoMajor        int                 `json:"proto_major"`
-	ProtoMinor        int                 `json:"proto_minor"`
-	DurationMicroSecs int64               `json:"duration_micro_secs"`
-	Duration          time.Duration       `json:"duration"`
-	ResponseHeaders   map[string][]string `json:"response_headers"`
-	RequestHeaders    map[string][]string `json:"request_headers"`
-	RequestBody       []byte              `json:"request_body"`
-	ResponseBody      []byte              `json:"response_body"`
-	StatusCode        int                 `json:"status_code"`
+	Duration        time.Duration       `json:"duration"`
+	Host            string              `json:"host"`
+	Method          string              `json:"method"`
+	PathParams      map[string]string   `json:"path_params"`
+	ProjectID       string              `json:"project_id"`
+	ProtoMajor      int                 `json:"proto_major"`
+	ProtoMinor      int                 `json:"proto_minor"`
+	QueryParams     map[string][]string `json:"query_params"`
+	RawURL          string              `json:"raw_url"` // raw request uri: path?query combination
+	Referer         string              `json:"referer"`
+	RequestBody     []byte              `json:"request_body"`
+	RequestHeaders  map[string][]string `json:"request_headers"`
+	ResponseBody    []byte              `json:"response_body"`
+	ResponseHeaders map[string][]string `json:"response_headers"`
+	SdkType         string              `json:"sdk_type"`
+	StatusCode      int                 `json:"status_code"`
+	Timestamp       time.Time           `json:"timestamp"`
+	URLPath         string              `json:"url_path"`
 }
 
 type Client struct {
@@ -145,21 +149,24 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 
 		since := time.Since(start)
 		payload := Payload{
-			Timestamp:         time.Now(),
-			ProjectID:         c.metadata.ProjectId,
-			Host:              req.Host,
-			Referer:           req.Referer(),
-			Method:            req.Method,
-			URLPath:           req.URL.Path,
-			ProtoMajor:        req.ProtoMajor,
-			ProtoMinor:        req.ProtoMinor,
-			ResponseHeaders:   recRes.Header,
-			RequestHeaders:    req.Header,
-			RequestBody:       (reqBuf),
-			ResponseBody:      (resBody),
-			StatusCode:        recRes.StatusCode,
-			Duration:          since,
-			DurationMicroSecs: since.Microseconds(),
+			Duration:        since,
+			Host:            req.Host,
+			Method:          req.Method,
+			PathParams:      nil,
+			ProjectID:       c.metadata.ProjectId,
+			ProtoMajor:      req.ProtoMajor,
+			ProtoMinor:      req.ProtoMinor,
+			QueryParams:     req.URL.Query(),
+			RawURL:          req.URL.RawPath,
+			Referer:         req.Referer(),
+			RequestBody:     (reqBuf),
+			RequestHeaders:  req.Header,
+			ResponseBody:    (resBody),
+			ResponseHeaders: recRes.Header,
+			SdkType:         SDKType,
+			StatusCode:      recRes.StatusCode,
+			Timestamp:       time.Now(),
+			URLPath:         req.URL.RequestURI(),
 		}
 
 		c.PublishMessage(req.Context(), payload)
@@ -190,28 +197,35 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	blw := &bodyLogWriter{body: bytes.NewBuffer([]byte{}), ResponseWriter: ctx.Writer}
 	ctx.Writer = blw
 
-	pretty.Println("params", ctx.Params)
 	ctx.Next()
 
 	pretty.Println("params", ctx.Params)
 
+	pathParams := map[string]string{}
+	for _, param := range ctx.Params {
+		pathParams[param.Key] = param.Value
+	}
+
 	since := time.Since(start)
 	payload := Payload{
-		Timestamp:         time.Now(),
-		ProjectID:         c.metadata.ProjectId,
-		Host:              ctx.Request.Host,
-		Referer:           ctx.Request.Referer(),
-		Method:            ctx.Request.Method,
-		URLPath:           ctx.Request.URL.Path,
-		ProtoMajor:        ctx.Request.ProtoMajor,
-		ProtoMinor:        ctx.Request.ProtoMinor,
-		ResponseHeaders:   ctx.Writer.Header().Clone(),
-		RequestHeaders:    ctx.Request.Header,
-		RequestBody:       byteBody,
-		ResponseBody:      blw.body.Bytes(),
-		StatusCode:        ctx.Writer.Status(),
-		Duration:          since,
-		DurationMicroSecs: since.Microseconds(),
+		Duration:        since,
+		Host:            ctx.Request.Host,
+		Method:          ctx.Request.Method,
+		ProjectID:       c.metadata.ProjectId,
+		ProtoMajor:      ctx.Request.ProtoMajor,
+		ProtoMinor:      ctx.Request.ProtoMinor,
+		QueryParams:     ctx.Request.URL.Query(),
+		PathParams:      pathParams,
+		RawURL:          ctx.Request.URL.RequestURI(),
+		Referer:         ctx.Request.Referer(),
+		RequestBody:     byteBody,
+		RequestHeaders:  ctx.Request.Header,
+		ResponseBody:    blw.body.Bytes(),
+		ResponseHeaders: ctx.Writer.Header().Clone(),
+		SdkType:         SDKType,
+		StatusCode:      ctx.Writer.Status(),
+		Timestamp:       time.Now(),
+		URLPath:         ctx.FullPath(),
 	}
 
 	c.PublishMessage(ctx, payload)

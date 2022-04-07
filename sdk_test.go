@@ -23,8 +23,8 @@ func TestMain(m *testing.M) {
 
 func TestAPIToolkitWorkflow(t *testing.T) {
 	_ = godotenv.Load(".env")
-	client, err := NewClient(context.Background(), Config{RootURL: "http://localhost:8080", APIKey: "xvUfL8MfaHwzm9YZgqZsGW1L9DnBR9eetbu51L9ZpzxUp4iV"})
-	// client, err := NewClient(context.Background(), Config{APIKey: "laVIfc0ZPywzyNMfhaZsS2xJ9GHBTdqeubvtgepdpzkCpt/C"}) // prod test
+	client, err := NewClient(context.Background(), Config{RootURL: "http://localhost:8080", APIKey: "wKBDL8JOaS0zm9Ad0aZsGWxP9DiSS9eeuuq50r8Koj8C89/D"})
+	// client, err := NewClient(context.Background(), Config{APIKey: "waAaLZEdNSkzlYdM0aZsTTYc9DmTSoCeuO3s0O0KoDBV9o/D"}) // prod test
 	if !assert.NoError(t, err) {
 		t.Fail()
 		return
@@ -85,7 +85,6 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 			c.Header("Content-Type", "application/json")
 			c.Header("X-API-KEY", "applicationKey")
 			c.JSON(http.StatusAccepted, exampleData)
-
 		})
 
 		router.NoRoute(func(c *gin.Context) {
@@ -110,11 +109,12 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 	})
 	t.Run("test gin server middleware with GET request", func(t *testing.T) {
 		var publishCalled bool
-		client.PublishMessage = func(ctx context.Context, payload Payload) error {
-			publishCalled = true
-			pretty.Println("payload", payload)
-			return nil
-		}
+		// client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		// 	publishCalled = true
+		// 	pretty.Println("payload", payload)
+		// 	return nil
+		// }
+		client.PublishMessage = client.publishMessage
 
 		router := gin.New()
 		router.Use(client.GinMiddleware)
@@ -167,6 +167,7 @@ var exampleData = map[string]interface{}{
 		},
 	},
 }
+
 var exampleData2 = map[string]interface{}{
 	"status": "request",
 	"send": map[string]interface{}{

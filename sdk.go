@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -19,15 +20,14 @@ import (
 )
 
 const (
-	topicID = "apitoolkit-go-client"
-	SDKType = "go_gin"
+	SDKType = "GoGin"
 )
 
 // Payload represents request and response details
 type Payload struct {
-	Duration        time.Duration       `json:"duration"`
+	Duration        time.Duration       `json:"duration"` // duration in nanoseconds
 	Host            string              `json:"host"`
-	Method          string              `json:"method"`
+	Method          string              `json:"method"` // method with all caps
 	PathParams      map[string]string   `json:"path_params"`
 	ProjectID       string              `json:"project_id"`
 	ProtoMajor      int                 `json:"proto_major"`
@@ -62,6 +62,7 @@ type Config struct {
 type ClientMetadata struct {
 	ProjectId                string          `json:"project_id"`
 	PubsubProjectId          string          `json:"pubsub_project_id"`
+	TopicID                  string          `json:"topic_id"`
 	PubsubPushServiceAccount json.RawMessage `json:"pubsub_push_service_account"`
 }
 
@@ -84,12 +85,14 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, errors.Wrap(err, "unable to unmarshal client metadata response")
 	}
 
+	pretty.Println("🔥", clientMetadata)
+
 	client, err := pubsub.NewClient(ctx, clientMetadata.PubsubProjectId, option.WithCredentialsJSON(clientMetadata.PubsubPushServiceAccount))
 	if err != nil {
 		return nil, err
 	}
 
-	topic := client.Topic(topicID)
+	topic := client.Topic(clientMetadata.TopicID)
 	cl := &Client{
 		pubsubClient: client,
 		goReqsTopic:  topic,
@@ -115,6 +118,8 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("payload json", string(data))
 
 	msgg := &pubsub.Message{
 		Data:        data,
@@ -179,7 +184,6 @@ type bodyLogWriter struct {
 }
 
 func (w *bodyLogWriter) Write(b []byte) (int, error) {
-	pretty.Println("bodyLogWtiter Write", string(b))
 	w.body.Write(b)
 	return w.ResponseWriter.Write(b)
 }
@@ -198,8 +202,6 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	ctx.Writer = blw
 
 	ctx.Next()
-
-	pretty.Println("params", ctx.Params)
 
 	pathParams := map[string]string{}
 	for _, param := range ctx.Params {

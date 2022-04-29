@@ -13,7 +13,7 @@ package main
 
 import (
   	// Import the apitoolkit golang sdk
-  	apitoolkit "github.com/apitoolkit/apitoolkit-go-client"
+  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
 
 func main() {

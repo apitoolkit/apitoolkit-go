@@ -14,6 +14,6 @@ require (
 	github.com/kr/pretty v0.3.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	google.golang.org/api v0.68.0 // indirect
+	google.golang.org/api v0.68.0
 	google.golang.org/genproto v0.0.0-20220215190005-e57b466719ef // indirect
 )

@@ -1,4 +1,4 @@
-module github.com/apitoolkit/apitoolkit-go-client
+module github.com/apitoolkit/apitoolkit-go
 
 go 1.16
 

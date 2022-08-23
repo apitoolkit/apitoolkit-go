@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 
 func TestAPIToolkitWorkflow(t *testing.T) {
 	_ = godotenv.Load(".env")
-	client, err := NewClient(context.Background(), Config{RootURL: "http://localhost:8080", APIKey: "wKBDL8JOaS0zm9Ad0aZsGWxP9DiSS9eeuuq50r8Koj8C89/D"})
+	client, err := NewClient(context.Background(), Config{RootURL: "http://localhost:8080", APIKey: "x/ZLLsxMNSozzNcf1aZsSzhP9DiURoeev7rlgOhcq20C9t7D"})
 	// client, err := NewClient(context.Background(), Config{APIKey: "waAaLZEdNSkzlYdM0aZsTTYc9DmTSoCeuO3s0O0KoDBV9o/D"}) // prod test
 	if !assert.NoError(t, err) {
 		t.Fail()
@@ -33,11 +33,11 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 
 	t.Run("test golang native server middleware", func(t *testing.T) {
 		var publishCalled bool
-		client.PublishMessage = func(ctx context.Context, payload Payload) error {
-			publishCalled = true
-			pretty.Println("payload", payload)
-			return nil
-		}
+		// client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		// 	publishCalled = true
+		// 	pretty.Println("payload", payload)
+		// 	return nil
+		// }
 
 		handlerFn := func(w http.ResponseWriter, r *http.Request) {
 			body, err := ioutil.ReadAll(r.Body)
@@ -69,11 +69,11 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 	})
 	t.Run("test gin server middleware", func(t *testing.T) {
 		var publishCalled bool
-		client.PublishMessage = func(ctx context.Context, payload Payload) error {
-			publishCalled = true
-			pretty.Println("payload", payload)
-			return nil
-		}
+		// client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		// 	publishCalled = true
+		// 	pretty.Println("payload", payload)
+		// 	return nil
+		// }
 
 		router := gin.New()
 		router.Use(client.GinMiddleware)
@@ -94,7 +94,6 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 		ts := httptest.NewServer(router)
 		defer ts.Close()
 
-		fmt.Println("ROOT URL", ts.URL)
 		resp, err := req.Post(ts.URL+"/slug-value/test",
 			req.Param{"param1": "abc", "param2": 123},
 			req.Header{
@@ -172,7 +171,7 @@ var exampleData2 = map[string]interface{}{
 	"status": "request",
 	"send": map[string]interface{}{
 		"message": "hello world",
-		"account_data": map[string]interface{}{
+		"account_data": []map[string]interface{}{{
 			"batch_number":           12345,
 			"account_id":             "123456789",
 			"account_name":           "test account",
@@ -184,6 +183,6 @@ var exampleData2 = map[string]interface{}{
 			"account_updated_at":     "2020-01-01T00:00:00Z",
 			"account_deleted_at":     "2020-01-01T00:00:00Z",
 			"possible_account_types": []string{"test", "staging", "production"},
-		},
+		}},
 	},
 }

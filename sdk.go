@@ -15,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
 	"github.com/joho/godotenv"
-	"github.com/kr/pretty"
 	"google.golang.org/api/option"
 )
 
@@ -25,24 +24,24 @@ const (
 
 // Payload represents request and response details
 type Payload struct {
-	Duration        time.Duration       `json:"duration"` // duration in nanoseconds
-	Host            string              `json:"host"`
-	Method          string              `json:"method"` // method with all caps
-	PathParams      map[string]string   `json:"path_params"`
-	ProjectID       string              `json:"project_id"`
-	ProtoMajor      int                 `json:"proto_major"`
-	ProtoMinor      int                 `json:"proto_minor"`
-	QueryParams     map[string][]string `json:"query_params"`
-	RawURL          string              `json:"raw_url"` // raw request uri: path?query combination
-	Referer         string              `json:"referer"`
-	RequestBody     []byte              `json:"request_body"`
-	RequestHeaders  map[string][]string `json:"request_headers"`
-	ResponseBody    []byte              `json:"response_body"`
-	ResponseHeaders map[string][]string `json:"response_headers"`
-	SdkType         string              `json:"sdk_type"`
-	StatusCode      int                 `json:"status_code"`
 	Timestamp       time.Time           `json:"timestamp"`
+	RequestHeaders  map[string][]string `json:"request_headers"`
+	QueryParams     map[string][]string `json:"query_params"`
+	PathParams      map[string]string   `json:"path_params"`
+	ResponseHeaders map[string][]string `json:"response_headers"`
+	Method          string              `json:"method"`
+	SdkType         string              `json:"sdk_type"`
+	Host            string              `json:"host"`
+	RawURL          string              `json:"raw_url"`
+	Referer         string              `json:"referer"`
+	ProjectID       string              `json:"project_id"`
 	URLPath         string              `json:"url_path"`
+	ResponseBody    []byte              `json:"response_body"`
+	RequestBody     []byte              `json:"request_body"`
+	ProtoMinor      int                 `json:"proto_minor"`
+	StatusCode      int                 `json:"status_code"`
+	ProtoMajor      int                 `json:"proto_major"`
+	Duration        time.Duration       `json:"duration"`
 }
 
 type Client struct {
@@ -72,20 +71,19 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	if cfg.RootURL != "" {
 		url = cfg.RootURL
 	}
+
 	resp, err := req.Get(url+"/api/client_metadata", req.Header{
 		"Authorization": "Bearer " + cfg.APIKey,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to query apitoolkit for client metadata")
+		return nil, fmt.Errorf("unable to query apitoolkit for client metadata: %w", err)
 	}
 
 	var clientMetadata ClientMetadata
 	err = resp.ToJSON(&clientMetadata)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal client metadata response")
+		return nil, fmt.Errorf("unable to unmarshal client metadata response: %w", err)
 	}
-
-	pretty.Println("🔥", clientMetadata)
 
 	client, err := pubsub.NewClient(ctx, clientMetadata.PubsubProjectId, option.WithCredentialsJSON(clientMetadata.PubsubPushServiceAccount))
 	if err != nil {

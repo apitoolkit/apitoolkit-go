@@ -147,6 +147,83 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 	})
 }
 
+func TestRedacting(t *testing.T) {
+	cfg := Config{
+		Debug: true,
+	}
+	client := Client{
+		config: &cfg,
+	}
+
+	var publishCalled bool
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		publishCalled = true
+		pretty.Println("🚀  payload", payload)
+		pretty.Println("🚀  RequestBody:", string(payload.RequestBody))
+		pretty.Println("🚀  ResponseBody:", string(payload.ResponseBody))
+
+		return nil
+	}
+
+	router := gin.New()
+	router.Use(client.GinMiddleware)
+	router.GET("/:slug/test", func(c *gin.Context) {
+		body, err := ioutil.ReadAll(c.Request.Body)
+		assert.NoError(t, err)
+		fmt.Println(string(body))
+
+		c.Header("Content-Type", "application/json")
+		c.Header("X-API-KEY", "applicationKey")
+		c.JSON(http.StatusAccepted, exampleData)
+	})
+
+	router.NoRoute(func(c *gin.Context) {
+		fmt.Println("NO ROUTE HANDLER")
+	})
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	resp, err := req.Get(ts.URL+"/slug-value/test",
+		req.QueryParam{"param1": "abc", "param2": 123},
+		req.Header{
+			"Content-Type":   "application/json",
+			"X-API-KEY":      "past-3",
+			"X-INPUT-HEADER": "testing",
+		},
+		req.BodyJSON(exampleData),
+	)
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+	pretty.Println(resp.Dump())
+}
+
+func TestRedactFunc(t *testing.T) {
+	t.Run("redact json", func(t *testing.T) {
+		exampleJSON, err := json.Marshal(exampleData)
+		if err != nil {
+			t.Error(err)
+		}
+		res := redact(exampleJSON, []string{"$.status", "$.data.account_data.possible_account_types", "$.non_existent"})
+		expected := `{"data":{"account_data":{"account_balance":"100.00","account_created_at":"2020-01-01T00:00:00Z","account_currency":"USD","account_deleted_at":"2020-01-01T00:00:00Z","account_id":"123456789","account_name":"test account","account_status":"active","account_type":"test","account_updated_at":"2020-01-01T00:00:00Z","batch_number":12345,"possible_account_types":"[CLIENT_REDACTED]"},"message":"hello world"},"status":"[CLIENT_REDACTED]"}`
+		assert.JSONEq(t, expected, string(res))
+	})
+
+	t.Run("redactHeaders", func(t *testing.T) {
+
+		result := redactHeaders(map[string][]string{
+			"Content-Type": []string{"application/json"},
+			"X-API-KEY":    []string{"test"},
+			"X-rando":      []string{"test 2"},
+		}, []string{"Content-Type", "X-rando"})
+		assert.Equal(t, result, map[string][]string{
+			"Content-Type": {"[CLIENT_REDACTED]"},
+			"X-API-KEY":    {"test"},
+			"X-rando":      {"[CLIENT_REDACTED]"},
+		})
+	})
+}
+
 var exampleData = map[string]interface{}{
 	"status": "success",
 	"data": map[string]interface{}{

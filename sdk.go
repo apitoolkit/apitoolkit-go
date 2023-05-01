@@ -1,3 +1,25 @@
+// APIToolkit: The API Toolkit golang client is an sdk used to integrate golang web services with APIToolkit.
+// It monitors incoming traffic, gathers the requests and sends the request to the apitoolkit servers.
+//
+// APIToolkit go sdk can be used with most popular Golang routers off the box. And if your routing library of choice is not supported,
+// feel free to leave an issue on github, or send in a pul request.
+//
+// Here's how the SDK can be used with a gin server:
+//
+//	   // Initialize the client using your apitoolkit.io generated apikey
+//	   apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+//		 if err != nil {
+//	    		panic(err)
+//		 }
+//
+//	   router := gin.New()
+//
+//		 // Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
+//	   router.Use(apitoolkitClient.GinMiddleware)
+//
+//	   // Register your handlers as usual and run the gin server as usual.
+//	   router.POST("/:slug/test", func(c *gin.Context) {c.Text(200, "ok")})
+//	   ...
 package apitoolkit
 
 import (
@@ -6,11 +28,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/AsaiYusuke/jsonpath"
 	"github.com/cockroachdb/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
@@ -19,7 +44,8 @@ import (
 )
 
 const (
-	SDKType = "GoGin"
+	GoDefaultSDKType = "GoDefault"
+	GoGinSDKType     = "GoGin"
 )
 
 // Payload represents request and response details
@@ -53,9 +79,14 @@ type Client struct {
 }
 
 type Config struct {
+	Debug     bool
 	RootURL   string
 	APIKey    string
 	ProjectID string
+	// A list of field headers whose values should never be sent to apitoolkit
+	RedactHeaders      []string
+	RedactRequestBody  []string
+	RedactResponseBody []string
 }
 
 type ClientMetadata struct {
@@ -65,6 +96,7 @@ type ClientMetadata struct {
 	PubsubPushServiceAccount json.RawMessage `json:"pubsub_push_service_account"`
 }
 
+// NewClient would initialize an APIToolkit client which we can use to push data to apitoolkit.
 func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	_ = godotenv.Load(".env")
 	url := "https://app.apitoolkit.io"
@@ -98,9 +130,15 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 		metadata:     &clientMetadata,
 	}
 	cl.PublishMessage = cl.publishMessage
+
+	if cl.config.Debug {
+		log.Println("APIToolkit: client initialized successfully")
+	}
+
 	return cl, nil
 }
 
+// Close cleans up the apitoolkit client. It should be called before the app shorts down, ideally as a defer call.
 func (c *Client) Close() error {
 	c.goReqsTopic.Stop()
 	return c.pubsubClient.Close()
@@ -109,6 +147,9 @@ func (c *Client) Close() error {
 // PublishMessage publishes payload to a gcp cloud console
 func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	if c.goReqsTopic == nil {
+		if c.config.Debug {
+			log.Println("APIToolkit: topic is not initialized. Check client initialization")
+		}
 		return errors.New("topic is not initialized")
 	}
 
@@ -117,14 +158,15 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 		return err
 	}
 
-	fmt.Println("payload json", string(data))
-
 	msgg := &pubsub.Message{
 		Data:        data,
 		PublishTime: time.Now(),
 	}
 
 	c.goReqsTopic.Publish(ctx, msgg)
+	if c.config.Debug {
+		log.Println("APIToolkit: message published to pubsub topic")
+	}
 	return err
 }
 
@@ -150,27 +192,9 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 		res.WriteHeader(recRes.StatusCode)
 		res.Write(resBody)
 
-		since := time.Since(start)
-		payload := Payload{
-			Duration:        since,
-			Host:            req.Host,
-			Method:          req.Method,
-			PathParams:      nil,
-			ProjectID:       c.metadata.ProjectId,
-			ProtoMajor:      req.ProtoMajor,
-			ProtoMinor:      req.ProtoMinor,
-			QueryParams:     req.URL.Query(),
-			RawURL:          req.URL.RawPath,
-			Referer:         req.Referer(),
-			RequestBody:     (reqBuf),
-			RequestHeaders:  req.Header,
-			ResponseBody:    (resBody),
-			ResponseHeaders: recRes.Header,
-			SdkType:         SDKType,
-			StatusCode:      recRes.StatusCode,
-			Timestamp:       time.Now(),
-			URLPath:         req.URL.RequestURI(),
-		}
+		payload := c.buildPayload(GoDefaultSDKType, start, req, recRes.StatusCode,
+			reqBuf, resBody, recRes.Header, nil, req.URL.RequestURI(),
+		)
 
 		c.PublishMessage(req.Context(), payload)
 	})
@@ -193,8 +217,8 @@ func (w *bodyLogWriter) WriteString(s string) (int, error) {
 
 func (c *Client) GinMiddleware(ctx *gin.Context) {
 	start := time.Now()
-	byteBody, _ := ioutil.ReadAll(ctx.Request.Body)
-	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(byteBody))
+	reqByteBody, _ := ioutil.ReadAll(ctx.Request.Body)
+	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqByteBody))
 
 	blw := &bodyLogWriter{body: bytes.NewBuffer([]byte{}), ResponseWriter: ctx.Writer}
 	ctx.Writer = blw
@@ -206,27 +230,91 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 		pathParams[param.Key] = param.Value
 	}
 
-	since := time.Since(start)
-	payload := Payload{
-		Duration:        since,
-		Host:            ctx.Request.Host,
-		Method:          ctx.Request.Method,
-		ProjectID:       c.metadata.ProjectId,
-		ProtoMajor:      ctx.Request.ProtoMajor,
-		ProtoMinor:      ctx.Request.ProtoMinor,
-		QueryParams:     ctx.Request.URL.Query(),
-		PathParams:      pathParams,
-		RawURL:          ctx.Request.URL.RequestURI(),
-		Referer:         ctx.Request.Referer(),
-		RequestBody:     byteBody,
-		RequestHeaders:  ctx.Request.Header,
-		ResponseBody:    blw.body.Bytes(),
-		ResponseHeaders: ctx.Writer.Header().Clone(),
-		SdkType:         SDKType,
-		StatusCode:      ctx.Writer.Status(),
-		Timestamp:       time.Now(),
-		URLPath:         ctx.FullPath(),
-	}
+	payload := c.buildPayload(GoGinSDKType, start, ctx.Request, ctx.Writer.Status(),
+		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), pathParams, ctx.FullPath(),
+	)
 
 	c.PublishMessage(ctx, payload)
+}
+
+func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http.Request,
+	statusCode int, reqBody []byte, respBody []byte, respHeader map[string][]string,
+	pathParams map[string]string, urlPath string,
+) Payload {
+	if req == nil || c == nil || req.URL == nil {
+		// Early return with empty payload to prevent any nil pointer panics
+		if c.config.Debug {
+			log.Println("APIToolkit: nil request or client or url while building payload.")
+		}
+		return Payload{}
+	}
+	projectId := ""
+	if c.metadata != nil {
+		projectId = c.metadata.ProjectId
+	}
+
+	redactedHeaders := []string{}
+	for _, v := range c.config.RedactHeaders {
+		redactedHeaders = append(redactedHeaders, strings.ToLower(v))
+	}
+
+	since := time.Since(trackingStart)
+	return Payload{
+		Duration:        since,
+		Host:            req.Host,
+		Method:          req.Method,
+		PathParams:      nil,
+		ProjectID:       projectId,
+		ProtoMajor:      req.ProtoMajor,
+		ProtoMinor:      req.ProtoMinor,
+		QueryParams:     req.URL.Query(),
+		RawURL:          req.URL.RequestURI(),
+		Referer:         req.Referer(),
+		RequestBody:     redact(reqBody, c.config.RedactRequestBody),
+		RequestHeaders:  redactHeaders(req.Header, redactedHeaders),
+		ResponseBody:    redact(respBody, c.config.RedactResponseBody),
+		ResponseHeaders: redactHeaders(respHeader, redactedHeaders),
+		SdkType:         SDKType,
+		StatusCode:      statusCode,
+		Timestamp:       time.Now(),
+		URLPath:         urlPath,
+	}
+}
+
+func redact(data []byte, redactList []string) []byte {
+	config := jsonpath.Config{}
+	config.SetAccessorMode()
+
+	var src interface{}
+	json.Unmarshal(data, &src)
+
+	for _, key := range redactList {
+		output, _ := jsonpath.Retrieve(key, src, config)
+		for _, v := range output {
+			accessor, ok := v.(jsonpath.Accessor)
+			if ok {
+				accessor.Set("[CLIENT_REDACTED]")
+			}
+		}
+	}
+	dataJSON, _ := json.Marshal(src)
+	return dataJSON
+}
+
+func redactHeaders(headers map[string][]string, redactList []string) map[string][]string {
+	for k, _ := range headers {
+		if find(redactList, k) {
+			headers[k] = []string{"[CLIENT_REDACTED]"}
+		}
+	}
+	return headers
+}
+
+func find(haystack []string, needle string) bool {
+	for _, hay := range haystack {
+		if hay == needle {
+			return true
+		}
+	}
+	return false
 }

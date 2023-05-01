@@ -71,4 +71,4 @@ the RedactRequestBody and RedactResponseBody expect a list of JSONPath strings a
 The choice of JSONPath was selected to allow you have great flexibility in descibing which fields within your responses are sensitive.
 Also note that these list of items to be redacted will be aplied to all endpoint requests and responses on your server.
 To learn more about jsonpath to help form your queries, please take a look at this cheatsheet:
-https://lzone.de/cheat-sheet/JSONPath 
+[https://lzone.de/cheat-sheet/JSONPath](https://lzone.de/cheat-sheet/JSONPath)

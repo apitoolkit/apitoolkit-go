@@ -40,6 +40,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
 	"github.com/joho/godotenv"
+	"github.com/kr/pretty"
 	"google.golang.org/api/option"
 )
 
@@ -80,6 +81,9 @@ type Client struct {
 
 type Config struct {
 	Debug     bool
+  // VerboseDebug should never be enabled in production 
+  // and logs entire message body which gets sent to APIToolkit
+  VerboseDebug bool
 	RootURL   string
 	APIKey    string
 	ProjectID string
@@ -166,6 +170,9 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	c.goReqsTopic.Publish(ctx, msgg)
 	if c.config.Debug {
 		log.Println("APIToolkit: message published to pubsub topic")
+    if c.config.VerboseDebug {
+      log.Println("APIToolkit: ", pretty.Sprint(data))
+    }
 	}
 	return err
 }

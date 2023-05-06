@@ -80,13 +80,13 @@ type Client struct {
 }
 
 type Config struct {
-	Debug     bool
-  // VerboseDebug should never be enabled in production 
-  // and logs entire message body which gets sent to APIToolkit
-  VerboseDebug bool
-	RootURL   string
-	APIKey    string
-	ProjectID string
+	Debug bool
+	// VerboseDebug should never be enabled in production
+	// and logs entire message body which gets sent to APIToolkit
+	VerboseDebug bool
+	RootURL      string
+	APIKey       string
+	ProjectID    string
 	// A list of field headers whose values should never be sent to apitoolkit
 	RedactHeaders      []string
 	RedactRequestBody  []string
@@ -170,9 +170,9 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	c.goReqsTopic.Publish(ctx, msgg)
 	if c.config.Debug {
 		log.Println("APIToolkit: message published to pubsub topic")
-    if c.config.VerboseDebug {
-      log.Println("APIToolkit: ", pretty.Sprint(data))
-    }
+		if c.config.VerboseDebug {
+			log.Println("APIToolkit: ", pretty.Sprint(data))
+		}
 	}
 	return err
 }

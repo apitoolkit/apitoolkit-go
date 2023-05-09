@@ -1,14 +1,20 @@
- [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go)
+[![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go)
 
 # API Toolkit Golang Client
-The API Toolkit golang client is an sdk used to integrate golang web services with APIToolkit. 
+
+The API Toolkit golang client is an sdk used to integrate golang web services with APIToolkit.
 It monitors incoming traffic, gathers the requests and sends the request to the apitoolkit servers.
 
 ## Design decisions:
+
 - Use the gcp SDK to send real time traffic from REST APIs to the gcp topic
 
 ## How to Integrate:
-Gin example:
+
+First install the apitoolkit Go sdk:
+`go get github.com/apitoolkit/apitoolkit-go`
+
+Then add apitoolkit to your app like so (Gin example):
 
 ```go
 package main
@@ -38,10 +44,11 @@ func main() {
 ```
 
 ## Client Redacting fields
-While it's possible to mark a field as redacted from the apitoolkit dashboard, this client also supports redacting at the client side. 
+
+While it's possible to mark a field as redacted from the apitoolkit dashboard, this client also supports redacting at the client side.
 Client side redacting means that those fields would never leave your servers at all. So you feel safer that your sensitive data only stays on your servers.
 
-To mark fields that should be redacted, simply add them to the apitoolkit config struct. 
+To mark fields that should be redacted, simply add them to the apitoolkit config struct.
 Eg:
 
 ```go
@@ -65,7 +72,7 @@ func main() {
 }
 ```
 
-It is important to note that while the `RedactHeaders` config field accepts a list of headers(case insensitive), 
+It is important to note that while the `RedactHeaders` config field accepts a list of headers(case insensitive),
 the RedactRequestBody and RedactResponseBody expect a list of JSONPath strings as arguments.
 
 The choice of JSONPath was selected to allow you have great flexibility in descibing which fields within your responses are sensitive.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -141,6 +142,41 @@ func TestAPIToolkitWorkflow(t *testing.T) {
 				"X-API-KEY":    "past-3",
 			},
 		)
+		assert.NoError(t, err)
+		assert.True(t, publishCalled)
+		pretty.Println(resp.Dump())
+	})
+
+	t.Run("test echo server middleware", func(t *testing.T) {
+		var publishCalled bool
+		client.PublishMessage = client.publishMessage
+
+		e := echo.New()
+		e.Use(client.EchoMiddleware)
+
+		e.GET("/test/path", func(c echo.Context) (err error) {
+			body, err := ioutil.ReadAll(c.Request().Body)
+			assert.NoError(t, err)
+			fmt.Println(string(body))
+
+			c.Response().Header().Set("Content-Type", "application/json")
+
+			c.Response().Header().Set("X-API-KEY", "applicationKey")
+			c.JSON(http.StatusAccepted, exampleData)
+			return
+		})
+
+		ts := httptest.NewServer(e)
+		defer ts.Close()
+
+		resp, err := req.Get(ts.URL+"/slug-value/test",
+			req.QueryParam{"param1": "abc", "param2": 123},
+			req.Header{
+				"Content-Type": "application/json",
+				"X-API-KEY":    "past-3",
+			},
+		)
+
 		assert.NoError(t, err)
 		assert.True(t, publishCalled)
 		pretty.Println(resp.Dump())

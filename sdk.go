@@ -39,7 +39,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
-	"github.com/joho/godotenv"
 	"github.com/kr/pretty"
 	"google.golang.org/api/option"
 )
@@ -102,7 +101,6 @@ type ClientMetadata struct {
 
 // NewClient would initialize an APIToolkit client which we can use to push data to apitoolkit.
 func NewClient(ctx context.Context, cfg Config) (*Client, error) {
-	_ = godotenv.Load(".env")
 	url := "https://app.apitoolkit.io"
 	if cfg.RootURL != "" {
 		url = cfg.RootURL

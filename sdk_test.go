@@ -12,6 +12,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+
 func TestRedactFunc(t *testing.T) {
 	t.Run("redact json", func(t *testing.T) {
 		exampleJSON, err := json.Marshal(exampleData)

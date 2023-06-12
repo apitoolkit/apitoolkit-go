@@ -124,6 +124,7 @@ func TestGinMiddlewareGET(t *testing.T) {
 	}
 	router := gin.New()
 	router.Use(client.GinMiddleware)
+
 	router.GET("/:slug/test", func(c *gin.Context) {
 		body, err := ioutil.ReadAll(c.Request.Body)
 		assert.NoError(t, err)

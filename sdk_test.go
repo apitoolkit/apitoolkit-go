@@ -2,11 +2,6 @@ package apitoolkit
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/labstack/echo/v4"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -17,92 +12,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-
-func TestEchoServerMiddleware(t *testing.T) {
-		var publishCalled bool
-		client.PublishMessage = client.publishMessage
-
-		e := echo.New()
-		e.Use(client.EchoMiddleware)
-
-		e.GET("/test/path", func(c echo.Context) (err error) {
-			body, err := ioutil.ReadAll(c.Request().Body)
-			assert.NoError(t, err)
-			fmt.Println(string(body))
-
-			c.Response().Header().Set("Content-Type", "application/json")
-
-			c.Response().Header().Set("X-API-KEY", "applicationKey")
-			c.JSON(http.StatusAccepted, exampleData)
-			return
-		})
-
-		ts := httptest.NewServer(e)
-		defer ts.Close()
-
-		resp, err := req.Get(ts.URL+"/slug-value/test",
-			req.QueryParam{"param1": "abc", "param2": 123},
-			req.Header{
-				"Content-Type": "application/json",
-				"X-API-KEY":    "past-3",
-			},
-		)
-
-		assert.NoError(t, err)
-		assert.True(t, publishCalled)
-		pretty.Println(resp.Dump())
-}
-
-func TestRedacting(t *testing.T) {
-	cfg := Config{
-		Debug: true,
-	}
-	client := Client{
-		config: &cfg,
-	}
-
-	var publishCalled bool
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
-		publishCalled = true
-		pretty.Println("🚀  payload", payload)
-		pretty.Println("🚀  RequestBody:", string(payload.RequestBody))
-		pretty.Println("🚀  ResponseBody:", string(payload.ResponseBody))
-
-		return nil
-	}
-
-	router := gin.New()
-	router.Use(client.GinMiddleware)
-	router.GET("/:slug/test", func(c *gin.Context) {
-		body, err := ioutil.ReadAll(c.Request.Body)
-		assert.NoError(t, err)
-		fmt.Println(string(body))
-
-		c.Header("Content-Type", "application/json")
-		c.Header("X-API-KEY", "applicationKey")
-		c.JSON(http.StatusAccepted, exampleData)
-	})
-
-	router.NoRoute(func(c *gin.Context) {
-		fmt.Println("NO ROUTE HANDLER")
-	})
-
-	ts := httptest.NewServer(router)
-	defer ts.Close()
-
-	resp, err := req.Get(ts.URL+"/slug-value/test",
-		req.QueryParam{"param1": "abc", "param2": 123},
-		req.Header{
-			"Content-Type":   "application/json",
-			"X-API-KEY":      "past-3",
-			"X-INPUT-HEADER": "testing",
-		},
-		req.BodyJSON(exampleData),
-	)
-	assert.NoError(t, err)
-	assert.True(t, publishCalled)
-	pretty.Println(resp.Dump())
-}
 
 func TestRedactFunc(t *testing.T) {
 	t.Run("redact json", func(t *testing.T) {

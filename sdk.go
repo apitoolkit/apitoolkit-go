@@ -34,14 +34,12 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/AsaiYusuke/jsonpath"
 	"github.com/cockroachdb/errors"
-	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
 	"github.com/kr/pretty"
 	"google.golang.org/api/option"
@@ -179,73 +177,6 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	return err
 }
 
-// Middleware collects request, response parameters and publishes the payload
-func (c *Client) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		reqBuf, _ := ioutil.ReadAll(req.Body)
-		req.Body.Close()
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
-
-		rec := httptest.NewRecorder()
-		start := time.Now()
-		next.ServeHTTP(rec, req)
-
-		recRes := rec.Result()
-		// io.Copy(res, recRes.Body)
-		for k, v := range recRes.Header {
-			for _, vv := range v {
-				res.Header().Add(k, vv)
-			}
-		}
-		resBody, _ := ioutil.ReadAll(recRes.Body)
-		res.WriteHeader(recRes.StatusCode)
-		res.Write(resBody)
-
-		payload := c.buildPayload(GoDefaultSDKType, start, req, recRes.StatusCode,
-			reqBuf, resBody, recRes.Header, nil, req.URL.RequestURI(),
-		)
-
-		c.PublishMessage(req.Context(), payload)
-	})
-}
-
-type ginBodyLogWriter struct {
-	gin.ResponseWriter
-	body *bytes.Buffer
-}
-
-func (w *ginBodyLogWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
-	return w.ResponseWriter.Write(b)
-}
-
-func (w *ginBodyLogWriter) WriteString(s string) (int, error) {
-	w.body.WriteString(s)
-	return w.ResponseWriter.WriteString(s)
-}
-
-func (c *Client) GinMiddleware(ctx *gin.Context) {
-	start := time.Now()
-	reqByteBody, _ := ioutil.ReadAll(ctx.Request.Body)
-	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqByteBody))
-
-	blw := &ginBodyLogWriter{body: bytes.NewBuffer([]byte{}), ResponseWriter: ctx.Writer}
-	ctx.Writer = blw
-
-	ctx.Next()
-
-	pathParams := map[string]string{}
-	for _, param := range ctx.Params {
-		pathParams[param.Key] = param.Value
-	}
-
-	payload := c.buildPayload(GoGinSDKType, start, ctx.Request, ctx.Writer.Status(),
-		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), pathParams, ctx.FullPath(),
-	)
-
-	c.PublishMessage(ctx, payload)
-}
-
 // bodyDumpResponseWriter use to preserve the http response body during request processing
 type echoBodyLogWriter struct {
 	io.Writer
@@ -325,7 +256,7 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		Duration:        since,
 		Host:            req.Host,
 		Method:          req.Method,
-		PathParams:      nil,
+		PathParams:      pathParams,
 		ProjectID:       projectId,
 		ProtoMajor:      req.ProtoMajor,
 		ProtoMinor:      req.ProtoMinor,

@@ -42,8 +42,10 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	}
 	pretty.Println("PARAMS ",pathParams)
 
-	payload := c.buildPayload(GoGinSDKType, start, ctx.Request, ctx.Writer.Status(),
-		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), pathParams, ctx.FullPath(),
+	payload := c.buildPayload(GoGinSDKType, start, ctx.Request, 
+		ctx.Writer.Status(),
+		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), 
+		pathParams, ctx.FullPath(),
 	)
 
 	c.PublishMessage(ctx, payload)

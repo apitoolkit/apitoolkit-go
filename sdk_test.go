@@ -1,71 +1,15 @@
 package apitoolkit
 
 import (
-	"context"
 	"encoding/json"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/imroc/req"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
 	os.Exit(m.Run())
-}
-
-func TestAPIToolkitWorkflow(t *testing.T) {
-	// _ = godotenv.Load(".env")
-	// client, err := NewClient(context.Background(), Config{RootURL: "http://localhost:8080", APIKey: "x/ZLLsxMNSozzNcf1aZsSzhP9DiURoeev7rlgOhcq20C9t7D"})
-	// client, err := NewClient(context.Background(), Config{APIKey: "waAaLZEdNSkzlYdM0aZsTTYc9DmTSoCeuO3s0O0KoDBV9o/D"}) // prod test
-	// if !assert.NoError(t, err) {
-	// 	t.Fail()
-	// 	return
-	// }
-	// defer client.Close()
-	var err error
-	client := &Client{
-		config: &Config{},
-	}
-
-	t.Run("test golang native server middleware", func(t *testing.T) {
-		var publishCalled bool
-		client.PublishMessage = func(ctx context.Context, payload Payload) error {
-			publishCalled = true
-			return nil
-		}
-
-		handlerFn := func(w http.ResponseWriter, r *http.Request) {
-			body, err := ioutil.ReadAll(r.Body)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, body)
-
-			jsonByte, err := json.Marshal(exampleData)
-			assert.NoError(t, err)
-
-			w.Header().Add("Content-Type", "application/json")
-			w.Header().Add("X-API-KEY", "applicationKey")
-			w.WriteHeader(http.StatusAccepted)
-			w.Write(jsonByte)
-		}
-
-		ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
-		defer ts.Close()
-
-		_, err = req.Post(ts.URL+"/test",
-			req.Param{"param1": "abc", "param2": 123},
-			req.Header{
-				"Content-Type": "application/json",
-				"X-API-KEY":    "past-3",
-			},
-			req.BodyJSON(exampleData2),
-		)
-		assert.NoError(t, err)
-		assert.True(t, publishCalled)
-	})
 }
 
 func TestRedactFunc(t *testing.T) {

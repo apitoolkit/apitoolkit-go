@@ -52,7 +52,6 @@ func TestGinMiddleware(t *testing.T) {
 
 		reqData, _ := json.Marshal(exampleData2)
 		respData, _ := json.Marshal(exampleDataRedacted)
-
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
 

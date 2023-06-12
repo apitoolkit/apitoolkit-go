@@ -30,8 +30,9 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 		res.WriteHeader(recRes.StatusCode)
 		res.Write(resBody)
 
-		payload := c.buildPayload(GoDefaultSDKType, start, req, recRes.StatusCode,
-			reqBuf, resBody, recRes.Header, nil, req.URL.RequestURI(),
+		payload := c.buildPayload(GoDefaultSDKType, start, 
+			req, recRes.StatusCode,
+			reqBuf, resBody, recRes.Header, nil, req.URL.Path,
 		)
 
 		c.PublishMessage(req.Context(), payload)

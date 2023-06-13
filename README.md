@@ -53,12 +53,12 @@ Eg:
 
 ```go
 func main() {
-    apitoolkitCfg := apitoolkit.Config{
-        RedactHeaders: []string{"Content-Type", "Authorization", "Cookies"}
-        RedactRequestBody: []string{"$.credit-card.cvv", "$.credit-card.name"}
-        RedactResponseBody: []string{"$.message.error"}
-        APIKey: "<APIKEY>"
-    }
+    	apitoolkitCfg := apitoolkit.Config{
+        	RedactHeaders: []string{"Content-Type", "Authorization", "Cookies"},
+        	RedactRequestBody: []string{"$.credit-card.cvv", "$.credit-card.name"},
+        	RedactResponseBody: []string{"$.message.error"},
+        	APIKey: "<APIKEY>",
+    	}
 
   	// Initialize the client using your apitoolkit.io generated apikey
   	apitoolkitClient, _ := apitoolkit.NewClient(context.Background(), apitoolkitCfg)

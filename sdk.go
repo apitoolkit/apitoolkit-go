@@ -40,8 +40,10 @@ import (
 )
 
 const (
-	GoDefaultSDKType = "GoDefault"
+	GoDefaultSDKType = "GoBuiltIn"
+	// GoDefaultSDKType = "GoDefault"
 	GoGinSDKType     = "GoGin"
+	GoGorillaMux = "GoGorillaMux"
 )
 
 // Payload represents request and response details

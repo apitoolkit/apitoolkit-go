@@ -16,6 +16,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/s2a-go v0.1.3 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/imroc/req v0.3.2
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect

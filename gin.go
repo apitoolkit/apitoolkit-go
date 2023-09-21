@@ -42,6 +42,7 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 		ctx.Request, ctx.Writer.Status(),
 		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), 
 		pathParams, ctx.FullPath(),
+		c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 	)
 
 	c.PublishMessage(ctx, payload)

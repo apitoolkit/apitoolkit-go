@@ -41,9 +41,9 @@ import (
 
 const (
 	GoDefaultSDKType = "GoBuiltIn"
-	// GoDefaultSDKType = "GoDefault"
 	GoGinSDKType     = "GoGin"
 	GoGorillaMux = "GoGorillaMux"
+	GoOutgoing = "GoOutgoing"
 )
 
 // Payload represents request and response details
@@ -176,6 +176,8 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http.Request,
 	statusCode int, reqBody []byte, respBody []byte, respHeader map[string][]string,
 	pathParams map[string]string, urlPath string,
+	redactHeadersList, 
+	redactRequestBodyList, redactResponseBodyList []string,
 ) Payload {
 	if req == nil || c == nil || req.URL == nil {
 		// Early return with empty payload to prevent any nil pointer panics
@@ -189,8 +191,8 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		projectId = c.metadata.ProjectId
 	}
 
-	redactedHeaders := []string{}
-	for _, v := range c.config.RedactHeaders {
+	redactedHeaders := []string{"password", "Authorization", "Cookies"}
+	for _, v := range redactHeadersList {
 		redactedHeaders = append(redactedHeaders, strings.ToLower(v))
 	}
 
@@ -206,9 +208,9 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		QueryParams:     req.URL.Query(),
 		RawURL:          req.URL.RequestURI(),
 		Referer:         req.Referer(),
-		RequestBody:     redact(reqBody, c.config.RedactRequestBody),
+		RequestBody:     redact(reqBody, redactRequestBodyList),
 		RequestHeaders:  redactHeaders(req.Header, redactedHeaders),
-		ResponseBody:    redact(respBody, c.config.RedactResponseBody),
+		ResponseBody:    redact(respBody, redactResponseBodyList),
 		ResponseHeaders: redactHeaders(respHeader, redactedHeaders),
 		SdkType:         SDKType,
 		StatusCode:      statusCode,

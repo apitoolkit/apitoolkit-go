@@ -3,6 +3,7 @@ package apitoolkit
 import (
 	"bytes"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -35,6 +36,7 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 		payload := c.buildPayload(GoDefaultSDKType, start, 
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, nil, req.URL.Path,
+			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 		)
 
 		c.PublishMessage(req.Context(), payload)
@@ -70,9 +72,15 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 		payload := c.buildPayload(GoGorillaMux, start, 
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, vars, pathTmpl,
+			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 		)
 
-		c.PublishMessage(req.Context(), payload)
+		err := c.PublishMessage(req.Context(), payload)
+		if err!=nil{
+			if c.config.Debug {
+				log.Println("APIToolkit: unable to publish request payload to pubsub.")
+			}
+		}
 	})
 }
 

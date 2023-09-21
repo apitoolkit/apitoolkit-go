@@ -65,6 +65,7 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			ctx.Request(), ctx.Response().Status,
 			reqBuf, resBody.Bytes(), ctx.Response().Header().Clone(),
 			pathParams, ctx.Path(),
+			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 		)
 		c.PublishMessage(ctx.Request().Context(), payload)
 		return

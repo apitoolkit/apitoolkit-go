@@ -2,6 +2,7 @@ package apitoolkit
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"time"
 
@@ -24,6 +25,11 @@ func (w *ginBodyLogWriter) WriteString(s string) (int, error) {
 }
 
 func (c *Client) GinMiddleware(ctx *gin.Context) {
+	errorList := []ATError{}
+	ctx.Set(string(ErrorListCtxKey), &errorList)
+	newCtx := context.WithValue(ctx.Request.Context(), ErrorListCtxKey, errorList)
+	ctx.Request = ctx.Request.WithContext(newCtx)
+
 	start := time.Now()
 	reqByteBody, _ := ioutil.ReadAll(ctx.Request.Body)
 	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqByteBody))
@@ -43,6 +49,7 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), 
 		pathParams, ctx.FullPath(),
 		c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+		errorList,
 	)
 
 	c.PublishMessage(ctx, payload)

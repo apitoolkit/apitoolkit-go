@@ -42,11 +42,12 @@ import (
 const (
 	GoDefaultSDKType = "GoBuiltIn"
 	GoGinSDKType     = "GoGin"
-	GoGorillaMux = "GoGorillaMux"
-	GoOutgoing = "GoOutgoing"
+	GoGorillaMux     = "GoGorillaMux"
+	GoOutgoing       = "GoOutgoing"
 )
 
 // Payload represents request and response details
+// FIXME: How would we handle errors from background processes (Not web requests)
 type Payload struct {
 	Timestamp       time.Time           `json:"timestamp"`
 	RequestHeaders  map[string][]string `json:"request_headers"`
@@ -66,6 +67,7 @@ type Payload struct {
 	StatusCode      int                 `json:"status_code"`
 	ProtoMajor      int                 `json:"proto_major"`
 	Duration        time.Duration       `json:"duration"`
+	Errors          []ATError           `json:"errors"`
 }
 
 type Client struct {
@@ -176,8 +178,9 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http.Request,
 	statusCode int, reqBody []byte, respBody []byte, respHeader map[string][]string,
 	pathParams map[string]string, urlPath string,
-	redactHeadersList, 
+	redactHeadersList,
 	redactRequestBodyList, redactResponseBodyList []string,
+	errorList []ATError,
 ) Payload {
 	if req == nil || c == nil || req.URL == nil {
 		// Early return with empty payload to prevent any nil pointer panics
@@ -216,6 +219,7 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		StatusCode:      statusCode,
 		Timestamp:       time.Now(),
 		URLPath:         urlPath,
+		Errors:          errorList,
 	}
 }
 

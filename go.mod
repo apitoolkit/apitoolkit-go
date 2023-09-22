@@ -12,6 +12,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/getsentry/sentry-go v0.20.0 // indirect
 	github.com/gin-gonic/gin v1.9.0
+	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-playground/validator/v10 v10.13.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect

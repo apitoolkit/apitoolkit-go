@@ -79,3 +79,26 @@ The choice of JSONPath was selected to allow you have great flexibility in desci
 Also note that these list of items to be redacted will be aplied to all endpoint requests and responses on your server.
 To learn more about jsonpath to help form your queries, please take a look at this cheatsheet:
 [https://lzone.de/cheat-sheet/JSONPath](https://lzone.de/cheat-sheet/JSONPath)
+
+
+## Outgoing Requests 
+
+```go
+    ctx := context.Background()
+    HTTPClient := http.DefaultClient
+    HTTPClient.Transport = apitoolkitClient.WrapRoundTripper(
+        ctx, HTTPClient.Transport,
+        WithRedactHeaders([]string{}),
+    )
+
+```
+
+The code above shows how to use the custom roundtripper to replace the transport in the default http client. 
+The resulting HTTP client can be used for any purpose, but will send a copy of all incoming and outgoing requests 
+to the apitoolkit servers.
+
+
+## Report Errors 
+
+If you've used sentry, or bugsnag, or rollbar, then you're already familiar with this usecase. 
+But you can report an error to apitoolkit. A difference, is that errors are always associated with a parent request, and helps you query and associate the errors which occured while serving a given customer request.

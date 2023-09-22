@@ -2,6 +2,7 @@ package apitoolkit
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +15,10 @@ import (
 // Middleware collects request, response parameters and publishes the payload
 func (c *Client) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		errorList := []ATError{}
+		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
+    req = req.WithContext(newCtx)
+
 		reqBuf, _ := ioutil.ReadAll(req.Body)
 		req.Body.Close()
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
@@ -37,6 +42,7 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, nil, req.URL.Path,
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+			errorList,
 		)
 
 		c.PublishMessage(req.Context(), payload)
@@ -47,6 +53,10 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 // Middleware collects request, response parameters and publishes the payload
 func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		errorList := []ATError{}
+		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
+    req = req.WithContext(newCtx)
+
 		reqBuf, _ := ioutil.ReadAll(req.Body)
 		req.Body.Close()
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
@@ -73,6 +83,7 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, vars, pathTmpl,
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+			errorList,
 		)
 
 		err := c.PublishMessage(req.Context(), payload)

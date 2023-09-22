@@ -3,6 +3,7 @@ package apitoolkit
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"io"
 	"net"
 	"net/http"
@@ -36,6 +37,11 @@ func (w *echoBodyLogWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 // EchoMiddleware middleware for echo framework, collects requests, response and publishes the payload
 func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) (err error) {
+		errorList := []ATError{}
+		ctx.Set(string(ErrorListCtxKey), &errorList)
+		newCtx := context.WithValue(ctx.Request().Context(), ErrorListCtxKey, errorList)
+		ctx.SetRequest(ctx.Request().WithContext(newCtx))
+
 		var reqBuf []byte
 		// safely read request body
 		if ctx.Request().Body != nil {
@@ -66,6 +72,7 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			reqBuf, resBody.Bytes(), ctx.Response().Header().Clone(),
 			pathParams, ctx.Path(),
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+			errorList,
 		)
 		c.PublishMessage(ctx.Request().Context(), payload)
 		return

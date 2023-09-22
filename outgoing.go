@@ -47,6 +47,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 		respBodyBytes, res.Header, nil,
 		req.URL.Path, 
 		rt.cfg.RedactHeaders, rt.cfg.RedactRequestBody, rt.cfg.RedactResponseBody,
+		nil,
 	)
 
 	pErr := rt.client.PublishMessage(req.Context(), payload)

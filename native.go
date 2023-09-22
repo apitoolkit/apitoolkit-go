@@ -9,15 +9,19 @@ import (
 	"net/http/httptest"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 // Middleware collects request, response parameters and publishes the payload
 func (c *Client) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		msgID := uuid.Must(uuid.NewRandom())
+		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, msgID)
+
 		errorList := []ATError{}
-		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
-    req = req.WithContext(newCtx)
+		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
+		req = req.WithContext(newCtx)
 
 		reqBuf, _ := ioutil.ReadAll(req.Body)
 		req.Body.Close()
@@ -38,24 +42,28 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 		res.WriteHeader(recRes.StatusCode)
 		res.Write(resBody)
 
-		payload := c.buildPayload(GoDefaultSDKType, start, 
+		payload := c.buildPayload(GoDefaultSDKType, start,
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, nil, req.URL.Path,
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 			errorList,
+			msgID,
+			nil,
 		)
 
 		c.PublishMessage(req.Context(), payload)
 	})
 }
 
-
 // Middleware collects request, response parameters and publishes the payload
 func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		msgID := uuid.Must(uuid.NewRandom())
+		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, msgID)
+
 		errorList := []ATError{}
-		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
-    req = req.WithContext(newCtx)
+		newCtx = context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
+		req = req.WithContext(newCtx)
 
 		reqBuf, _ := ioutil.ReadAll(req.Body)
 		req.Body.Close()
@@ -79,20 +87,20 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 		pathTmpl, _ := route.GetPathTemplate()
 		vars := mux.Vars(req)
 
-		payload := c.buildPayload(GoGorillaMux, start, 
+		payload := c.buildPayload(GoGorillaMux, start,
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, vars, pathTmpl,
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 			errorList,
+			msgID,
+			nil,
 		)
 
 		err := c.PublishMessage(req.Context(), payload)
-		if err!=nil{
+		if err != nil {
 			if c.config.Debug {
 				log.Println("APIToolkit: unable to publish request payload to pubsub.")
 			}
 		}
 	})
 }
-
-

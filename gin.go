@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type ginBodyLogWriter struct {
@@ -25,9 +26,12 @@ func (w *ginBodyLogWriter) WriteString(s string) (int, error) {
 }
 
 func (c *Client) GinMiddleware(ctx *gin.Context) {
+	msgID := uuid.Must(uuid.NewRandom())
+	ctx.Set(string(CurrentRequestMessageID), msgID)
 	errorList := []ATError{}
 	ctx.Set(string(ErrorListCtxKey), &errorList)
 	newCtx := context.WithValue(ctx.Request.Context(), ErrorListCtxKey, errorList)
+	newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 	ctx.Request = ctx.Request.WithContext(newCtx)
 
 	start := time.Now()
@@ -50,6 +54,8 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 		pathParams, ctx.FullPath(),
 		c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 		errorList,
+		msgID,
+		nil,
 	)
 
 	c.PublishMessage(ctx, payload)

@@ -7,18 +7,20 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type roundTripper struct {
 	base   http.RoundTripper
 	ctx    context.Context
 	client *Client
-	cfg  *roundTripperConfig
+	cfg    *roundTripperConfig
 }
 
 func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	defer func() {
-		// span.Finish(tracer.WithError(err))
+		ReportError(req.Context(), err)
 	}()
 
 	if rt.client == nil {
@@ -36,22 +38,49 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 	// Add a header to all outgoing requests "X-APITOOLKIT-TRACE-PARENT-ID"
 	start := time.Now()
 	res, err = rt.base.RoundTrip(req)
+	var errorList []ATError
+	if err != nil {
+		// Add the error for the given request payload
+		errorList = append(errorList, buildError(err))
+	}
+
+	var payload Payload
+	var parentMsgIDPtr *uuid.UUID
+	parentMsgID, ok := req.Context().Value(CurrentRequestMessageID).(uuid.UUID)
+	if ok {
+		parentMsgIDPtr = &parentMsgID
+	}
 
 	// Capture the response body
-	respBodyBytes, _ := ioutil.ReadAll(res.Body)
-	res.Body = ioutil.NopCloser(bytes.NewBuffer(respBodyBytes))
-
-	payload := rt.client.buildPayload(
-		GoOutgoing,
-		start, req, res.StatusCode, reqBodyBytes,
-		respBodyBytes, res.Header, nil,
-		req.URL.Path, 
-		rt.cfg.RedactHeaders, rt.cfg.RedactRequestBody, rt.cfg.RedactResponseBody,
-		nil,
-	)
+	if res != nil {
+		respBodyBytes, _ := ioutil.ReadAll(res.Body)
+		res.Body = ioutil.NopCloser(bytes.NewBuffer(respBodyBytes))
+		payload = rt.client.buildPayload(
+			GoOutgoing,
+			start, req, res.StatusCode, reqBodyBytes,
+			respBodyBytes, res.Header, nil,
+			req.URL.Path,
+			rt.cfg.RedactHeaders, rt.cfg.RedactRequestBody, rt.cfg.RedactResponseBody,
+			errorList,
+			uuid.Must(uuid.NewRandom()),
+			parentMsgIDPtr,
+		)
+	} else {
+		payload = rt.client.buildPayload(
+			GoOutgoing,
+			start, req, 503, reqBodyBytes,
+			nil, nil, nil,
+			req.URL.Path,
+			rt.cfg.RedactHeaders, rt.cfg.RedactRequestBody, rt.cfg.RedactResponseBody,
+			errorList,
+			uuid.Must(uuid.NewRandom()),
+			parentMsgIDPtr,
+		)
+	}
 
 	pErr := rt.client.PublishMessage(req.Context(), payload)
 	if pErr != nil {
+		ReportError(req.Context(), pErr)
 		if rt.client.config.Debug {
 			log.Println("APIToolkit: unable to publish outgoing request payload to pubsub.")
 		}
@@ -101,6 +130,6 @@ func (c *Client) WrapRoundTripper(ctx context.Context, rt http.RoundTripper, opt
 		base:   rt,
 		ctx:    ctx,
 		client: c,
-		cfg: cfg,
+		cfg:    cfg,
 	}
 }

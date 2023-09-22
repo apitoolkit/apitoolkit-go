@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -37,9 +38,13 @@ func (w *echoBodyLogWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 // EchoMiddleware middleware for echo framework, collects requests, response and publishes the payload
 func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) (err error) {
+		msgID := uuid.Must(uuid.NewRandom())
+		ctx.Set(string(CurrentRequestMessageID), msgID)
+
 		errorList := []ATError{}
 		ctx.Set(string(ErrorListCtxKey), &errorList)
 		newCtx := context.WithValue(ctx.Request().Context(), ErrorListCtxKey, errorList)
+		newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 		ctx.SetRequest(ctx.Request().WithContext(newCtx))
 
 		var reqBuf []byte
@@ -63,19 +68,20 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		pathParams := map[string]string{}
 		for _, paramName := range ctx.ParamNames() {
-			pathParams[paramName] =  ctx.Param(paramName)
+			pathParams[paramName] = ctx.Param(paramName)
 		}
 
 		// proceed post-response processing
-		payload := c.buildPayload(GoDefaultSDKType, startTime, 
+		payload := c.buildPayload(GoDefaultSDKType, startTime,
 			ctx.Request(), ctx.Response().Status,
 			reqBuf, resBody.Bytes(), ctx.Response().Header().Clone(),
 			pathParams, ctx.Path(),
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 			errorList,
+			msgID,
+			nil,
 		)
 		c.PublishMessage(ctx.Request().Context(), payload)
 		return
 	}
 }
-

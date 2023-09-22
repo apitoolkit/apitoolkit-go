@@ -15,6 +15,8 @@ import (
 )
 
 func TestGinMiddleware(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
 	client := &Client{
 		config: &Config{
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
@@ -90,6 +92,7 @@ func TestGinMiddleware(t *testing.T) {
 }
 
 func TestGinMiddlewareGET(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	client := &Client{
 		config: &Config{},
 	}

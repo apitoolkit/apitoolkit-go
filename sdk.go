@@ -25,6 +25,7 @@ package apitoolkit
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -33,7 +34,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/AsaiYusuke/jsonpath"
-	"github.com/cockroachdb/errors"
+	"github.com/google/uuid"
 	"github.com/imroc/req"
 	"github.com/kr/pretty"
 	"google.golang.org/api/option"
@@ -68,6 +69,10 @@ type Payload struct {
 	ProtoMajor      int                 `json:"proto_major"`
 	Duration        time.Duration       `json:"duration"`
 	Errors          []ATError           `json:"errors"`
+	ServiceVersion  string              `json:"service_version"`
+	Tags            []string            `json:"tags"`
+	MsgID           string              `json:"msg_id"`
+	ParentID        *string             `json:"parent_id"`
 }
 
 type Client struct {
@@ -86,10 +91,14 @@ type Config struct {
 	RootURL      string
 	APIKey       string
 	ProjectID    string
+	// ServiceVersion is an identifier to help you track deployments. This could be a semver version or a git hash or anything you like.
+	ServiceVersion string
 	// A list of field headers whose values should never be sent to apitoolkit
 	RedactHeaders      []string
 	RedactRequestBody  []string
 	RedactResponseBody []string
+	// Tags are arbitrary identifiers for service being tracked, and can be used as filters on apitoolkit.
+	Tags []string `json:"tags"`
 }
 
 type ClientMetadata struct {
@@ -181,6 +190,8 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 	redactHeadersList,
 	redactRequestBodyList, redactResponseBodyList []string,
 	errorList []ATError,
+	msgID uuid.UUID,
+	parentID *uuid.UUID,
 ) Payload {
 	if req == nil || c == nil || req.URL == nil {
 		// Early return with empty payload to prevent any nil pointer panics
@@ -200,6 +211,12 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 	}
 
 	since := time.Since(trackingStart)
+	var parentIDVal *string
+	if parentID != nil {
+		parentIDStr := (*parentID).String()
+		parentIDVal = &parentIDStr
+	}
+
 	return Payload{
 		Duration:        since,
 		Host:            req.Host,
@@ -220,6 +237,10 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		Timestamp:       time.Now(),
 		URLPath:         urlPath,
 		Errors:          errorList,
+		ServiceVersion:  c.config.ServiceVersion,
+		Tags:            c.config.Tags,
+		MsgID:           msgID.String(),
+		ParentID:        parentIDVal,
 	}
 }
 

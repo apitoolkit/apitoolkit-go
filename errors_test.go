@@ -2,14 +2,12 @@ package apitoolkit
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/imroc/req"
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
@@ -24,10 +22,14 @@ func TestErrorReporting(t *testing.T) {
 	}
 	var publishCalled bool
 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
-		
-		x, _ := json.MarshalIndent(payload, "", "\t")
-		fmt.Println(string(x))
+		// x, _ := json.MarshalIndent(payload, "", "\t")
+		// fmt.Println(string(x))
 		pretty.Println(payload.Errors)
+		assert.NotEmpty(t, payload.Errors)
+		assert.Equal(t, "wrapper from err2 Example Error value", payload.Errors[0].Message)
+		assert.Equal(t, "Example Error value", payload.Errors[0].RootErrorMessage)
+		assert.Equal(t, "*fmt.wrapError", payload.Errors[0].ErrorType)
+		assert.Equal(t, "*errors.errorString", payload.Errors[0].RootErrorType)
 
 		assert.Equal(t, "POST", payload.Method)
 		assert.Equal(t, "/test", payload.URLPath)
@@ -36,11 +38,12 @@ func TestErrorReporting(t *testing.T) {
 	}
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
-		err1 := errors.Newf("Example Error %v", "value")
+		err1 := fmt.Errorf("Example Error %v", "value")
 
 		w.WriteHeader(http.StatusAccepted)
 		w.Write([]byte(`{"key":"value"}`))
-		err2 := errors.Wrap(err1, "wrapper from err2")
+
+		err2 := fmt.Errorf("wrapper from err2 %w", err1)
 		ReportError(r.Context(), err2)
 	}
 

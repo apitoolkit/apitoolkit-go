@@ -69,7 +69,7 @@ type Payload struct {
 	ProtoMajor      int                 `json:"proto_major"`
 	Duration        time.Duration       `json:"duration"`
 	Errors          []ATError           `json:"errors"`
-	ServiceVersion  string              `json:"service_version"`
+	ServiceVersion  *string              `json:"service_version"`
 	Tags            []string            `json:"tags"`
 	MsgID           string              `json:"msg_id"`
 	ParentID        *string             `json:"parent_id"`
@@ -217,6 +217,10 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		parentIDVal = &parentIDStr
 	}
 
+	var serviceVersion *string 
+	if c.config.ServiceVersion != ""{
+		serviceVersion = &c.config.ServiceVersion
+	}
 	return Payload{
 		Duration:        since,
 		Host:            req.Host,
@@ -237,7 +241,7 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		Timestamp:       time.Now(),
 		URLPath:         urlPath,
 		Errors:          errorList,
-		ServiceVersion:  c.config.ServiceVersion,
+		ServiceVersion:  serviceVersion,
 		Tags:            c.config.Tags,
 		MsgID:           msgID.String(),
 		ParentID:        parentIDVal,

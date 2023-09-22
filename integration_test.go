@@ -18,11 +18,13 @@ func TestReporting(t *testing.T) {
 	ctx := context.Background()
 	cfg := Config{
 			APIKey: os.Getenv("APITOOLKIT_KEY"),
-			RootURL: "https://localhost:8080",
+			RootURL: "http://localhost:8080",
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
 			RedactResponseBody: exampleDataRedaction,
+			Tags: []string{"staging"},
 		}
 	client, err := NewClient(ctx, cfg)
+	defer client.Close()
 	assert.NoError(t, err)
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
@@ -36,12 +38,8 @@ func TestReporting(t *testing.T) {
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	outClient := &Client{
-		config: &Config{},
-	}
-
 	atHTTPClient := http.DefaultClient
-	atHTTPClient.Transport = outClient.WrapRoundTripper(
+	atHTTPClient.Transport = client.WrapRoundTripper(
 		ctx, atHTTPClient.Transport,
 		WithRedactHeaders([]string{}),
 	)

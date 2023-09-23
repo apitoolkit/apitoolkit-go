@@ -121,6 +121,9 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to query apitoolkit for client metadata: %w", err)
 	}
+	if resp.Response().StatusCode >= 400 {
+		return nil, fmt.Errorf("unable to authenticate APIKey against apitoolkit servers. Is your API Key correct?")
+	}
 
 	var clientMetadata ClientMetadata
 	err = resp.ToJSON(&clientMetadata)

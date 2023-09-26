@@ -80,8 +80,7 @@ Also note that these list of items to be redacted will be aplied to all endpoint
 To learn more about jsonpath to help form your queries, please take a look at this cheatsheet:
 [https://lzone.de/cheat-sheet/JSONPath](https://lzone.de/cheat-sheet/JSONPath)
 
-
-## Outgoing Requests 
+## Outgoing Requests
 
 ```go
     ctx := context.Background()
@@ -93,12 +92,152 @@ To learn more about jsonpath to help form your queries, please take a look at th
 
 ```
 
-The code above shows how to use the custom roundtripper to replace the transport in the default http client. 
-The resulting HTTP client can be used for any purpose, but will send a copy of all incoming and outgoing requests 
-to the apitoolkit servers.
+The code above shows how to use the custom roundtripper to replace the transport in the default http client.
+The resulting HTTP client can be used for any purpose, but will send a copy of all incoming and outgoing requests
+to the apitoolkit servers. So to allow monitoring outgoing request from your servers use the `HTTPClient` to make http requests.
 
+## Report Errors
 
-## Report Errors 
+If you've used sentry, or bugsnag, or rollbar, then you're already familiar with this usecase.
+But you can report an error to apitoolkit. A difference, is that errors are always associated with a parent request, and helps you query and associate the errors which occured while serving a given customer request. To request errors to APIToolkit use call the `ReportError` method of `apitoolkit` not the client returned by `apitoolkit.NewClient` with the request context and the error to report
+Examples:
 
-If you've used sentry, or bugsnag, or rollbar, then you're already familiar with this usecase. 
-But you can report an error to apitoolkit. A difference, is that errors are always associated with a parent request, and helps you query and associate the errors which occured while serving a given customer request.
+**Native Go**
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+)
+
+func main() {
+	ctx := context.Background()
+	apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "<API_KEY>"})
+	if err != nil {
+		panic(err)
+	}
+
+	helloHandler := func(w http.ResponseWriter, r *http.Request) {
+		file, err := os.Open("non-existing-file.txt")
+		if err!= nil {
+			// Report the error to apitoolkit
+			apitoolkit.ReportError(r.Context(), err)
+		}
+		fmt.Fprintln(w, "{\"Hello\": \"World!\"}")
+	}
+
+	http.Handle("/", apitoolkitClient.Middleware(http.HandlerFunc(helloHandler)))
+
+	if err := http.ListenAndServe(":8089", nil); err != nil {
+		fmt.Println("Server error:", err)
+	}
+}
+
+```
+
+**Gin**
+
+```go
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+)
+
+func main() {
+    r := gin.Default()
+	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+	if err != nil {
+    	panic(err)
+	}
+
+    r.Use(apitoolkitClient.GinMiddleware)
+
+    r.GET("/", func(c *gin.Context) {
+		file, err := os.Open("non-existing-file.txt")
+		if err!= nil {
+			// Report an error to apitoolkit
+			apitoolkit.ReportError(c.Request.Context(), err)
+		}
+        c.String(http.StatusOK, "Hello, World!")
+    })
+
+    r.Run(":8080")
+}
+```
+
+**Echo**
+
+```go
+package main
+
+import (
+   //... other imports
+  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+)
+
+func main() {
+	e := echo.New()
+	ctx := context.Background()
+
+	apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "<API_KEY>"})
+	if err != nil {
+		panic(err)
+	}
+
+	e.Use(apitoolkitClient.EchoMiddleware)
+
+	e.GET("/", hello)
+
+	e.Logger.Fatal(e.Start(":1323"))
+}
+
+func hello(c echo.Context) error {
+	file, err := os.Open("non-existing-file.txt")
+	if err != nil {
+		apitoolkit.ReportError(c.Request().Context(), err)
+	}
+	log.Println(file)
+	return c.String(http.StatusOK, "Hello, World!")
+}
+
+```
+
+**Gorilla mux**
+
+```go
+import (
+   //... other imports
+  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+)
+
+func main() {
+	r := mux.NewRouter()
+	ctx := context.Background()
+
+	apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "<API_KEY>"})
+	if err != nil {
+		panic(err)
+	}
+	r.Use(apitoolkitClient.GorillaMuxMiddleware)
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, err := os.Open("mux.json")
+		if err != nil {
+			// Report the error to apitoolkit
+			apitoolkit.ReportError(r.Context(), err)
+		}
+		fmt.Fprintln(w, "Hello, World!")
+	})
+
+	server := &http.Server{Addr: ":8080", Handler: r}
+	err = server.ListenAndServe()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+```

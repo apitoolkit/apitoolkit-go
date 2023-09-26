@@ -43,7 +43,7 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		errorList := []ATError{}
 		ctx.Set(string(ErrorListCtxKey), &errorList)
-		newCtx := context.WithValue(ctx.Request().Context(), ErrorListCtxKey, errorList)
+		newCtx := context.WithValue(ctx.Request().Context(), ErrorListCtxKey, &errorList)
 		newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 		ctx.SetRequest(ctx.Request().WithContext(newCtx))
 

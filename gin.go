@@ -30,7 +30,7 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	ctx.Set(string(CurrentRequestMessageID), msgID)
 	errorList := []ATError{}
 	ctx.Set(string(ErrorListCtxKey), &errorList)
-	newCtx := context.WithValue(ctx.Request.Context(), ErrorListCtxKey, errorList)
+	newCtx := context.WithValue(ctx.Request.Context(), ErrorListCtxKey, &errorList)
 	newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 	ctx.Request = ctx.Request.WithContext(newCtx)
 

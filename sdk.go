@@ -272,7 +272,7 @@ func redact(data []byte, redactList []string) []byte {
 }
 
 func redactHeaders(headers map[string][]string, redactList []string) map[string][]string {
-	for k, _ := range headers {
+	for k := range headers {
 		if find(redactList, k) {
 			headers[k] = []string{"[CLIENT_REDACTED]"}
 		}

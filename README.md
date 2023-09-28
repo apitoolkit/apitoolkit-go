@@ -122,7 +122,7 @@ func main() {
 
 	helloHandler := func(w http.ResponseWriter, r *http.Request) {
 		file, err := os.Open("non-existing-file.txt")
-		if err!= nil {
+		if err != nil {
 			// Report the error to apitoolkit
 			apitoolkit.ReportError(r.Context(), err)
 		}
@@ -144,29 +144,29 @@ func main() {
 package main
 
 import (
-    "github.com/gin-gonic/gin"
-  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+	"github.com/gin-gonic/gin"
+	apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
 
 func main() {
-    r := gin.Default()
+	r := gin.Default()
 	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
 	if err != nil {
-    	panic(err)
+		panic(err)
 	}
 
-    r.Use(apitoolkitClient.GinMiddleware)
+	r.Use(apitoolkitClient.GinMiddleware)
 
-    r.GET("/", func(c *gin.Context) {
+	r.GET("/", func(c *gin.Context) {
 		file, err := os.Open("non-existing-file.txt")
-		if err!= nil {
+		if err != nil {
 			// Report an error to apitoolkit
 			apitoolkit.ReportError(c.Request.Context(), err)
 		}
-        c.String(http.StatusOK, "Hello, World!")
-    })
+		c.String(http.StatusOK, "Hello, World!")
+	})
 
-    r.Run(":8080")
+	r.Run(":8080")
 }
 ```
 
@@ -176,8 +176,8 @@ func main() {
 package main
 
 import (
-   //... other imports
-  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+	//... other imports
+	apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
 
 func main() {
@@ -211,8 +211,8 @@ func hello(c echo.Context) error {
 
 ```go
 import (
-   //... other imports
-  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+	//... other imports
+	apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
 
 func main() {

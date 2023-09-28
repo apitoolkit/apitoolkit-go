@@ -3,7 +3,7 @@ package apitoolkit
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -87,7 +87,7 @@ func TestOutgoingMiddleware(t *testing.T) {
 	}
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 

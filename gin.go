@@ -3,7 +3,7 @@ package apitoolkit
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,8 +35,8 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	ctx.Request = ctx.Request.WithContext(newCtx)
 
 	start := time.Now()
-	reqByteBody, _ := ioutil.ReadAll(ctx.Request.Body)
-	ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqByteBody))
+	reqByteBody, _ := io.ReadAll(ctx.Request.Body)
+	ctx.Request.Body = io.NopCloser(bytes.NewBuffer(reqByteBody))
 
 	blw := &ginBodyLogWriter{body: bytes.NewBuffer([]byte{}), ResponseWriter: ctx.Writer}
 	ctx.Writer = blw

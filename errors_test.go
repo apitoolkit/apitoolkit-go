@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -84,7 +84,6 @@ func TestErrorReporting(t *testing.T) {
 	assert.True(t, publishCalled)
 }
 
-
 func TestGinMiddlewareGETError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	client := &Client{
@@ -101,7 +100,7 @@ func TestGinMiddlewareGETError(t *testing.T) {
 	router.Use(client.GinMiddleware)
 
 	router.GET("/:slug/test", func(c *gin.Context) {
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{}, body)
 

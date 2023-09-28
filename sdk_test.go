@@ -117,8 +117,8 @@ func TestOutgoingMiddleware(t *testing.T) {
 		}, payload.QueryParams)
 
 		assert.Equal(t, map[string][]string{
-			"Content-Type":    {"application/json"},
-			"X-Api-Key":       {"past-3"},
+			"Content-Type": {"application/json"},
+			"X-Api-Key":    {"past-3"},
 		}, payload.RequestHeaders)
 		assert.Equal(t, "/test?param1=abc&param2=123", payload.RawURL)
 		assert.Equal(t, http.StatusAccepted, payload.StatusCode)
@@ -130,7 +130,6 @@ func TestOutgoingMiddleware(t *testing.T) {
 
 		assert.Equal(t, reqData, payload.RequestBody)
 		// assert.Equal(t, respData, payload.ResponseBody)
-
 
 		return nil
 	}
@@ -151,7 +150,6 @@ func TestOutgoingMiddleware(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }
 
 var exampleData = map[string]interface{}{

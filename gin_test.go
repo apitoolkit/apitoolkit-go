@@ -20,7 +20,7 @@ func TestGinMiddleware(t *testing.T) {
 	client := &Client{
 		config: &Config{
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction, 
+			RedactResponseBody: exampleDataRedaction,
 		},
 	}
 	var publishCalled bool

@@ -17,12 +17,12 @@ import (
 func TestReporting(t *testing.T) {
 	ctx := context.Background()
 	cfg := Config{
-			APIKey: os.Getenv("APITOOLKIT_KEY"),
-			RootURL: "http://localhost:8080",
-			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
-			Tags: []string{"staging"},
-		}
+		APIKey:             os.Getenv("APITOOLKIT_KEY"),
+		RootURL:            "http://localhost:8080",
+		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
+		RedactResponseBody: exampleDataRedaction,
+		Tags:               []string{"staging"},
+	}
 	client, err := NewClient(ctx, cfg)
 	defer client.Close()
 	assert.NoError(t, err)

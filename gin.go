@@ -42,15 +42,15 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	ctx.Writer = blw
 
 	ctx.Next()
-	
+
 	pathParams := map[string]string{}
 	for _, param := range ctx.Params {
 		pathParams[param.Key] = param.Value
 	}
 
-	payload := c.buildPayload(GoGinSDKType, start, 
+	payload := c.buildPayload(GoGinSDKType, start,
 		ctx.Request, ctx.Writer.Status(),
-		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(), 
+		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(),
 		pathParams, ctx.FullPath(),
 		c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
 		errorList,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -64,7 +64,7 @@ func TestEchoServerMiddleware(t *testing.T) {
 	e := echo.New()
 	e.Use(client.EchoMiddleware)
 	e.POST("/:slug/test", func(c echo.Context) (err error) {
-		body, err := ioutil.ReadAll(c.Request().Body)
+		body, err := io.ReadAll(c.Request().Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 		reqData, _ := json.Marshal(exampleData2)

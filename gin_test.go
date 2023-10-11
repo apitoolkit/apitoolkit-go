@@ -3,7 +3,7 @@ package apitoolkit
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,7 +20,7 @@ func TestGinMiddleware(t *testing.T) {
 	client := &Client{
 		config: &Config{
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction, 
+			RedactResponseBody: exampleDataRedaction,
 		},
 	}
 	var publishCalled bool
@@ -64,7 +64,7 @@ func TestGinMiddleware(t *testing.T) {
 	router := gin.New()
 	router.Use(client.GinMiddleware)
 	router.POST("/:slug/test", func(c *gin.Context) {
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 		reqData, _ := json.Marshal(exampleData2)
@@ -129,7 +129,7 @@ func TestGinMiddlewareGET(t *testing.T) {
 	router.Use(client.GinMiddleware)
 
 	router.GET("/:slug/test", func(c *gin.Context) {
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{}, body)
 

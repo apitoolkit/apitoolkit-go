@@ -12,8 +12,10 @@ import (
 
 type ctxKey string
 
-var ErrorListCtxKey = ctxKey("error-list")
-var CurrentRequestMessageID = ctxKey("current-req-msg-id")
+var (
+	ErrorListCtxKey         = ctxKey("error-list")
+	CurrentRequestMessageID = ctxKey("current-req-msg-id")
+)
 
 // ATError is the Apitoolkit error type/object
 type ATError struct {

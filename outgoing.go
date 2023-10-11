@@ -3,7 +3,7 @@ package apitoolkit
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -31,8 +31,8 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 	// Capture the request body
 	reqBodyBytes := []byte{}
 	if req.Body != nil {
-		reqBodyBytes, _ = ioutil.ReadAll(req.Body)
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
+		reqBodyBytes, _ = io.ReadAll(req.Body)
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
 	}
 
 	// Add a header to all outgoing requests "X-APITOOLKIT-TRACE-PARENT-ID"
@@ -53,8 +53,8 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 
 	// Capture the response body
 	if res != nil {
-		respBodyBytes, _ := ioutil.ReadAll(res.Body)
-		res.Body = ioutil.NopCloser(bytes.NewBuffer(respBodyBytes))
+		respBodyBytes, _ := io.ReadAll(res.Body)
+		res.Body = io.NopCloser(bytes.NewBuffer(respBodyBytes))
 		payload = rt.client.buildPayload(
 			GoOutgoing,
 			start, req, res.StatusCode, reqBodyBytes,

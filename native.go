@@ -3,7 +3,7 @@ package apitoolkit
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -23,9 +23,9 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
 		req = req.WithContext(newCtx)
 
-		reqBuf, _ := ioutil.ReadAll(req.Body)
+		reqBuf, _ := io.ReadAll(req.Body)
 		req.Body.Close()
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBuf))
 
 		rec := httptest.NewRecorder()
 		start := time.Now()
@@ -38,7 +38,7 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 				res.Header().Add(k, vv)
 			}
 		}
-		resBody, _ := ioutil.ReadAll(recRes.Body)
+		resBody, _ := io.ReadAll(recRes.Body)
 		res.WriteHeader(recRes.StatusCode)
 		res.Write(resBody)
 
@@ -65,9 +65,9 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 		newCtx = context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
 		req = req.WithContext(newCtx)
 
-		reqBuf, _ := ioutil.ReadAll(req.Body)
+		reqBuf, _ := io.ReadAll(req.Body)
 		req.Body.Close()
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBuf))
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBuf))
 
 		rec := httptest.NewRecorder()
 		start := time.Now()
@@ -79,7 +79,7 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 				res.Header().Add(k, vv)
 			}
 		}
-		resBody, _ := ioutil.ReadAll(recRes.Body)
+		resBody, _ := io.ReadAll(recRes.Body)
 		res.WriteHeader(recRes.StatusCode)
 		res.Write(resBody)
 

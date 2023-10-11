@@ -2,7 +2,7 @@
 // It monitors incoming traffic, gathers the requests and sends the request to the apitoolkit servers.
 //
 // APIToolkit go sdk can be used with most popular Golang routers off the box. And if your routing library of choice is not supported,
-// feel free to leave an issue on github, or send in a pul request.
+// feel free to leave an issue on github, or send in a pull request.
 //
 // Here's how the SDK can be used with a gin server:
 //
@@ -69,7 +69,7 @@ type Payload struct {
 	ProtoMajor      int                 `json:"proto_major"`
 	Duration        time.Duration       `json:"duration"`
 	Errors          []ATError           `json:"errors"`
-	ServiceVersion  *string              `json:"service_version"`
+	ServiceVersion  *string             `json:"service_version"`
 	Tags            []string            `json:"tags"`
 	MsgID           string              `json:"msg_id"`
 	ParentID        *string             `json:"parent_id"`
@@ -220,8 +220,8 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		parentIDVal = &parentIDStr
 	}
 
-	var serviceVersion *string 
-	if c.config.ServiceVersion != ""{
+	var serviceVersion *string
+	if c.config.ServiceVersion != "" {
 		serviceVersion = &c.config.ServiceVersion
 	}
 	return Payload{
@@ -272,7 +272,7 @@ func redact(data []byte, redactList []string) []byte {
 }
 
 func redactHeaders(headers map[string][]string, redactList []string) map[string][]string {
-	for k, _ := range headers {
+	for k := range headers {
 		if find(redactList, k) {
 			headers[k] = []string{"[CLIENT_REDACTED]"}
 		}

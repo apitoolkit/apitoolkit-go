@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,7 +59,7 @@ func TestNativeGoMiddleware(t *testing.T) {
 	}
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 
@@ -85,15 +85,13 @@ func TestNativeGoMiddleware(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }
-
 
 func TestGorillaGoMiddleware(t *testing.T) {
 	client := &Client{
 		config: &Config{
-			Debug: true,
-			VerboseDebug: true,
+			Debug:              true,
+			VerboseDebug:       true,
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
 			RedactResponseBody: exampleDataRedaction,
 		},
@@ -102,7 +100,7 @@ func TestGorillaGoMiddleware(t *testing.T) {
 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
 		assert.Equal(t, "POST", payload.Method)
 		assert.Equal(t, "/{param1:[a-z]+}/test", payload.URLPath)
-		assert.Equal(t, map[string]string{"param1":"paramval"}, payload.PathParams)
+		assert.Equal(t, map[string]string{"param1": "paramval"}, payload.PathParams)
 		assert.Equal(t, map[string][]string{
 			"param1": {"abc"},
 			"param2": {"123"},
@@ -135,7 +133,7 @@ func TestGorillaGoMiddleware(t *testing.T) {
 	}
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 
@@ -147,7 +145,6 @@ func TestGorillaGoMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 		w.Write(jsonByte)
 	}
-
 
 	r := mux.NewRouter()
 	r.Use(client.GorillaMuxMiddleware)
@@ -167,5 +164,4 @@ func TestGorillaGoMiddleware(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }

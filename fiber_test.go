@@ -64,7 +64,7 @@ func TestFiberMiddleware(t *testing.T) {
 	router := fiber.New()
 	router.Use(client.FiberMiddleware)
 	router.Post("/:slug/test", func(c *fiber.Ctx) error {
-		body := c.BodyRaw()
+		body := c.Request().Body()
 		assert.NotEmpty(t, body)
 		reqData, _ := json.Marshal(exampleData2)
 		assert.Equal(t, reqData, body)

@@ -14,6 +14,7 @@ It monitors incoming traffic, gathers the requests and sends the request to the 
 First install the apitoolkit Go sdk:
 `go get github.com/apitoolkit/apitoolkit-go`
 
+### Gin web server integration
 Then add apitoolkit to your app like so (Gin example):
 
 ```go
@@ -42,6 +43,117 @@ func main() {
 }
 
 ```
+
+### Fiber Router server integration
+```go
+package main
+
+import (
+  	// Import the apitoolkit golang sdk
+    apitoolkit "github.com/apitoolkit/apitoolkit-go"
+    fiber "github.com/gofiber/fiber/v2"
+)
+
+func main() {
+  	// Initialize the client using your apitoolkit.io generated apikey
+  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+	if err != nil {
+    		panic(err)
+	}
+
+  	router := fiber.New()
+
+  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
+  	router.Use(apitoolkitClient.FiberMiddleware)
+
+  	// Register your handlers as usual and run the gin server as usual.
+  	router.Post("/:slug/test", func(c *fiber.Ctx) {c.Status(200).JSON({"status":"ok"})})
+ 	...
+}
+```
+
+### Echo Router server integration
+```go
+package main
+
+import (
+  	// Import the apitoolkit golang sdk
+    apitoolkit "github.com/apitoolkit/apitoolkit-go"
+    echo "github.com/labstack/echo/v4"
+)
+
+func main() {
+  	// Initialize the client using your apitoolkit.io generated apikey
+  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+	if err != nil {
+    		panic(err)
+	}
+
+  	router := echo.New()
+
+  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
+  	router.Use(apitoolkitClient.EchoMiddleware)
+
+  	// Register your handlers as usual and run the gin server as usual.
+  	router.POST("/:slug/test", func(c *fiber.Ctx) {c.JSON(200, {"status":"ok"})})
+ 	...
+}
+```
+
+
+### Gorilla Mux Golang HTTP router integration 
+Only use this as a last resort. Make a request via github issues if your routing library of choice is not supported.
+```go
+import (
+  	// Import the apitoolkit golang sdk
+    apitoolkit "github.com/apitoolkit/apitoolkit-go"
+    "github.com/gorilla/mux"
+)
+
+func main() {
+  	// Initialize the client using your apitoolkit.io generated apikey
+  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+	if err != nil {
+        panic(err)
+	}
+
+  	router := mux.NewRouter()
+  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
+  	router.Use(apitoolkitClient.GorillaMuxMiddleware)
+
+  	// Register your handlers as usual and run the gin server as usual.
+  	router.HandleFunc("/{slug:[a-z]+}/test", func(w http.ResponseWriter, r *http.Request) {..}).Methods(http.MethodPost)
+ 	...
+}
+```
+
+### Native Golang HTTP router integration 
+Only use this as a last resort. Make a request via github issues if your routing library of choice is not supported.
+```go
+package main
+
+import (
+  	// Import the apitoolkit golang sdk
+    apitoolkit "github.com/apitoolkit/apitoolkit-go"
+    "github.com/gorilla/mux"
+)
+
+func main() {
+  	// Initialize the client using your apitoolkit.io generated apikey
+  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+	if err != nil {
+    		panic(err)
+	}
+
+
+  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
+  	router.Use(apitoolkitClient.Middleware)
+
+ 	...
+}
+```
+
+
 
 ## Client Redacting fields
 

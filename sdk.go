@@ -5,7 +5,9 @@
 // feel free to leave an issue on github, or send in a pull request.
 //
 // Here's how the SDK can be used with a gin server:
+// ```go
 //
+//	func main(){
 //	   // Initialize the client using your apitoolkit.io generated apikey
 //	   apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
 //		 if err != nil {
@@ -18,8 +20,10 @@
 //	   router.Use(apitoolkitClient.GinMiddleware)
 //
 //	   // Register your handlers as usual and run the gin server as usual.
-//	   router.POST("/:slug/test", func(c *gin.Context) {c.Text(200, "ok")})
-//	   ...
+//	   router.POST("/:slug/test", func(c *gin.Context) {c.String(200, "ok")})
+//	}
+//
+// ```
 package apitoolkit
 
 import (
@@ -37,6 +41,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/imroc/req"
 	"github.com/kr/pretty"
+	"github.com/valyala/fasthttp"
 	"google.golang.org/api/option"
 )
 
@@ -45,6 +50,7 @@ const (
 	GoGinSDKType     = "GoGin"
 	GoGorillaMux     = "GoGorillaMux"
 	GoOutgoing       = "GoOutgoing"
+	GoFiberSDKType   = "GoFiber"
 )
 
 // Payload represents request and response details
@@ -237,6 +243,81 @@ func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http
 		Referer:         req.Referer(),
 		RequestBody:     redact(reqBody, redactRequestBodyList),
 		RequestHeaders:  redactHeaders(req.Header, redactedHeaders),
+		ResponseBody:    redact(respBody, redactResponseBodyList),
+		ResponseHeaders: redactHeaders(respHeader, redactedHeaders),
+		SdkType:         SDKType,
+		StatusCode:      statusCode,
+		Timestamp:       time.Now(),
+		URLPath:         urlPath,
+		Errors:          errorList,
+		ServiceVersion:  serviceVersion,
+		Tags:            c.config.Tags,
+		MsgID:           msgID.String(),
+		ParentID:        parentIDVal,
+	}
+}
+
+func (c *Client) buildFastHTTPPayload(SDKType string, trackingStart time.Time, req *fasthttp.RequestCtx,
+	statusCode int, reqBody []byte, respBody []byte, respHeader map[string][]string,
+	pathParams map[string]string, urlPath string,
+	redactHeadersList,
+	redactRequestBodyList, redactResponseBodyList []string,
+	errorList []ATError,
+	msgID uuid.UUID,
+	parentID *uuid.UUID,
+	referer string,
+) Payload {
+	if req == nil || c == nil || req.URI() == nil {
+		// Early return with empty payload to prevent any nil pointer panics
+		if c.config.Debug {
+			log.Println("APIToolkit: nil request or client or url while building payload.")
+		}
+		return Payload{}
+	}
+	projectId := ""
+	if c.metadata != nil {
+		projectId = c.metadata.ProjectId
+	}
+
+	queryParams := map[string][]string{}
+	req.QueryArgs().VisitAll(func(key, value []byte) {
+		queryParams[string(key)] = []string{string(value)}
+	})
+
+	reqHeaders := map[string][]string{}
+	req.Request.Header.VisitAll(func(key, value []byte) {
+		reqHeaders[string(key)] = []string{string(value)}
+	})
+
+	redactedHeaders := []string{"password", "Authorization", "Cookies"}
+	for _, v := range redactHeadersList {
+		redactedHeaders = append(redactedHeaders, strings.ToLower(v))
+	}
+
+	since := time.Since(trackingStart)
+	var parentIDVal *string
+	if parentID != nil {
+		parentIDStr := (*parentID).String()
+		parentIDVal = &parentIDStr
+	}
+
+	var serviceVersion *string
+	if c.config.ServiceVersion != "" {
+		serviceVersion = &c.config.ServiceVersion
+	}
+	return Payload{
+		Duration:        since,
+		Host:            string(req.Host()),
+		Method:          string(req.Method()),
+		PathParams:      pathParams,
+		ProjectID:       projectId,
+		ProtoMajor:      1, // req.ProtoMajor,
+		ProtoMinor:      1, // req.ProtoMinor,
+		QueryParams:     queryParams,
+		RawURL:          string(req.RequestURI()),
+		Referer:         referer,
+		RequestBody:     redact(reqBody, redactRequestBodyList),
+		RequestHeaders:  redactHeaders(reqHeaders, redactedHeaders),
 		ResponseBody:    redact(respBody, redactResponseBodyList),
 		ResponseHeaders: redactHeaders(respHeader, redactedHeaders),
 		SdkType:         SDKType,

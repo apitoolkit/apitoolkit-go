@@ -17,12 +17,9 @@ require (
 	github.com/imroc/req v0.3.2
 	github.com/klauspost/compress v1.17.1 // indirect
 	github.com/kr/pretty v0.3.1
-	github.com/labstack/echo/v4 v4.10.0
+	github.com/labstack/echo/v4 v4.11.2
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/stretchr/testify v1.8.4
-	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/valyala/fasthttp v1.50.0
-	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
 	google.golang.org/api v0.139.0
 )

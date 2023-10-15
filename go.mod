@@ -3,9 +3,7 @@ module github.com/apitoolkit/apitoolkit-go
 go 1.16
 
 require (
-	cloud.google.com/go/compute v1.19.1 // indirect
-	cloud.google.com/go/iam v1.0.0 // indirect
-	cloud.google.com/go/pubsub v1.30.0
+	cloud.google.com/go/pubsub v1.33.0
 	github.com/AsaiYusuke/jsonpath v1.6.0
 	github.com/bytedance/sonic v1.8.8 // indirect
 	github.com/cockroachdb/errors v1.9.1
@@ -30,11 +28,11 @@ require (
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/valyala/fasthttp v1.50.0
 	golang.org/x/arch v0.3.0 // indirect
+	google.golang.org/api v0.139.0
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
-	google.golang.org/api v0.120.0
 )

@@ -102,7 +102,6 @@ func main() {
 
 
 ### Gorilla Mux Golang HTTP router integration 
-Only use this as a last resort. Make a request via github issues if your routing library of choice is not supported.
 ```go
 import (
   	// Import the apitoolkit golang sdk
@@ -123,6 +122,32 @@ func main() {
 
   	// Register your handlers as usual and run the gin server as usual.
   	router.HandleFunc("/{slug:[a-z]+}/test", func(w http.ResponseWriter, r *http.Request) {..}).Methods(http.MethodPost)
+ 	...
+}
+```
+
+
+### Golang Chi HTTP router integration 
+```go
+import (
+  	// Import the apitoolkit golang sdk
+    apitoolkit "github.com/apitoolkit/apitoolkit-go"
+    "github.com/go-chi/chi/v5"
+)
+
+func main() {
+  	// Initialize the client using your apitoolkit.io generated apikey
+  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
+	if err != nil {
+        panic(err)
+	}
+
+  	router := chi.NewRouter()
+  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
+  	router.Use(apitoolkitClient.ChiMiddleware)
+
+  	// Register your handlers as usual and run the gin server as usual.
+  	router.Post("/{slug:[a-z]+}/test", func(w http.ResponseWriter, r *http.Request) {..})
  	...
 }
 ```

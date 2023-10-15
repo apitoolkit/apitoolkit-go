@@ -12,7 +12,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/kr/pretty"
 )
 
 // Middleware collects request, response parameters and publishes the payload

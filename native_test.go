@@ -167,7 +167,6 @@ func TestGorillaGoMiddleware(t *testing.T) {
 	assert.True(t, publishCalled)
 }
 
-
 func TestChiMiddleware(t *testing.T) {
 	client := &Client{
 		config: &Config{

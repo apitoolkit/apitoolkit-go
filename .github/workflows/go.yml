@@ -10,16 +10,60 @@ on:
     branches: [ "main" ]
 
 jobs:
+  test:
+    name: Test
+    strategy:
+      fail-fast: true
+      matrix:
+        go: ['1.20', '1.21']
+        os: ['ubuntu-latest']
+    runs-on: ${{ matrix.os }}
 
-  build:
-    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
+        go-version: ${{ matrix.go }}
+
+    - name: Format
+      run: gofmt -s -w . && git diff --exit-code
+
+    - name: Vet
+      run: go vet ./...
+
+    - name: Tidy
+      run: go mod tidy && git diff --exit-code
+
+    - name: Mod
+      run: go mod download
+
+    - name: Mod Verify
+      run: go mod verify
+
+    - name: Generate
+      run: go generate ./... && git diff --exit-code
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v -count=1 -race -shuffle=on -cover ./...
+
+
+  build:
+    name: Build
+    strategy:
+      fail-fast: true
+      matrix:
+        go: ['1.20', '1.21']
+        os: ['ubuntu-latest']
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+
+      - run: go build -o /dev/null ./...

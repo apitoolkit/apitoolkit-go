@@ -18,7 +18,7 @@ import (
 func (c *Client) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		msgID := uuid.Must(uuid.NewRandom())
-		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, msgID)
+		newCtx := context.WithValue(req.Context(), CurrentRequestMessageID, msgID)
 
 		errorList := []ATError{}
 		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
@@ -60,10 +60,10 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		msgID := uuid.Must(uuid.NewRandom())
-		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, msgID)
+		newCtx := context.WithValue(req.Context(), CurrentRequestMessageID, msgID)
 
 		errorList := []ATError{}
-		newCtx = context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
+		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
 		req = req.WithContext(newCtx)
 
 		reqBuf, _ := io.ReadAll(req.Body)
@@ -110,10 +110,10 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 func (c *Client) ChiMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		msgID := uuid.Must(uuid.NewRandom())
-		newCtx := context.WithValue(req.Context(), ErrorListCtxKey, msgID)
+		newCtx := context.WithValue(req.Context(), CurrentRequestMessageID, msgID)
 
 		errorList := []ATError{}
-		newCtx = context.WithValue(req.Context(), ErrorListCtxKey, &errorList)
+		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
 		req = req.WithContext(newCtx)
 
 		reqBuf, _ := io.ReadAll(req.Body)

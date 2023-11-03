@@ -46,7 +46,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 
 	var payload Payload
 	var parentMsgIDPtr *uuid.UUID
-	parentMsgID, ok := req.Context().Value(CurrentRequestMessageID).(uuid.UUID)
+	parentMsgID, ok := rt.ctx.Value(CurrentRequestMessageID).(uuid.UUID)
 	if ok {
 		parentMsgIDPtr = &parentMsgID
 	}

@@ -100,6 +100,53 @@ func TestFiberMiddleware(t *testing.T) {
 	assert.Equal(t, respData, data)
 }
 
+func TestOutgoingRequestFiber(t *testing.T) {
+	client := &Client{
+		config: &Config{},
+	}
+	publishCalled := false
+	var parentId *string
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		if payload.RawURL == "/from-gorilla" {
+			assert.NotNil(t, payload.ParentID)
+			parentId = payload.ParentID
+		} else if payload.URLPath == "/:slug/test" {
+			assert.Equal(t, *parentId, payload.MsgID)
+		}
+		publishCalled = true
+		return nil
+	}
+	router := fiber.New()
+	router.Use(client.FiberMiddleware)
+	router.Post("/:slug/test", func(c *fiber.Ctx) error {
+		body := c.Request().Body()
+		assert.NotEmpty(t, body)
+		reqData, _ := json.Marshal(exampleData2)
+		assert.Equal(t, reqData, body)
+		HTTPClient := http.DefaultClient
+		HTTPClient.Transport = client.WrapRoundTripper(
+			c.UserContext(), HTTPClient.Transport,
+			WithRedactHeaders([]string{}),
+		)
+		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+
+		c.Append("Content-Type", "application/json")
+		c.Append("X-API-KEY", "applicationKey")
+
+		return c.Status(http.StatusAccepted).JSON(exampleData)
+	})
+
+	reqData, _ := json.Marshal(exampleData2)
+	ts := httptest.NewRequest("POST", "/slug-value/test?param1=abc&param2=123", bytes.NewReader(reqData))
+	ts.Header.Set("Content-Type", "application/json")
+	ts.Header.Set("X-API-KEY", "past-3")
+
+	_, err := router.Test(ts)
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+
+}
+
 // func TestFiberMiddlewareGET(t *testing.T) {
 // 	client := &Client{
 // 		config: &Config{},

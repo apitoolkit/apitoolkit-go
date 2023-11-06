@@ -2,12 +2,16 @@ package apitoolkit
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
@@ -79,4 +83,43 @@ func TestErrorReporting(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
+}
+func TestGinMiddlewareGETError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	client := &Client{
+		config: &Config{},
+	}
+	var publishCalled bool
+	respData, _ := json.Marshal(exampleData)
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		publishCalled = true
+		pretty.Println(payload)
+		return nil
+	}
+	router := gin.New()
+	router.Use(client.GinMiddleware)
+
+	router.GET("/:slug/test", func(c *gin.Context) {
+		body, err := io.ReadAll(c.Request.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{}, body)
+
+		ReportError(c.Request.Context(), errors.New("Test Error"))
+
+		c.Header("Content-Type", "application/json")
+		c.JSON(http.StatusAccepted, exampleData)
+	})
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	resp, err := req.Get(ts.URL+"/slug-value/test",
+		req.QueryParam{"param1": "abc", "param2": 123},
+		req.Header{
+			"X-API-KEY": "past-3",
+		},
+	)
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+	assert.Equal(t, respData, resp.Bytes())
 }

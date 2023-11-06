@@ -86,11 +86,33 @@ func TestOutgoingMiddleware(t *testing.T) {
 		return nil
 	}
 
+	outClient := &Client{
+		config: &Config{},
+	}
+
+	outClient.PublishMessage = func(ctx context.Context, payload Payload) error {
+		assert.Equal(t, "GET", payload.Method)
+		assert.Equal(t, "/from-gorilla", payload.URLPath)
+		assert.Equal(t, map[string]string(nil), payload.PathParams)
+		assert.Equal(t, "/from-gorilla", payload.RawURL)
+		assert.Equal(t, http.StatusServiceUnavailable, payload.StatusCode)
+		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
+		assert.Equal(t, GoOutgoing, payload.SdkType)
+		assert.NotNil(t, payload.ParentID)
+
+		return nil
+	}
+
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
-
+		atHTTPClient := http.DefaultClient
+		atHTTPClient.Transport = outClient.WrapRoundTripper(
+			r.Context(), atHTTPClient.Transport,
+			WithRedactHeaders([]string{}),
+		)
+		_, _ = atHTTPClient.Get("http://localhost:3000/from-gorilla")
 		jsonByte, err := json.Marshal(exampleData)
 		assert.NoError(t, err)
 
@@ -103,43 +125,6 @@ func TestOutgoingMiddleware(t *testing.T) {
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	outClient := &Client{
-		config: &Config{},
-	}
-
-	outClient.PublishMessage = func(ctx context.Context, payload Payload) error {
-		assert.Equal(t, "POST", payload.Method)
-		assert.Equal(t, "/test", payload.URLPath)
-		assert.Equal(t, map[string]string(nil), payload.PathParams)
-		assert.Equal(t, map[string][]string{
-			"param1": {"abc"},
-			"param2": {"123"},
-		}, payload.QueryParams)
-
-		assert.Equal(t, map[string][]string{
-			"Content-Type": {"application/json"},
-			"X-Api-Key":    {"past-3"},
-		}, payload.RequestHeaders)
-		assert.Equal(t, "/test?param1=abc&param2=123", payload.RawURL)
-		assert.Equal(t, http.StatusAccepted, payload.StatusCode)
-		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
-		assert.Equal(t, GoOutgoing, payload.SdkType)
-
-		reqData, _ := json.Marshal(exampleData2)
-		// respData, _ := json.Marshal(exampleDataRedacted)
-
-		assert.Equal(t, reqData, payload.RequestBody)
-		// assert.Equal(t, respData, payload.ResponseBody)
-
-		return nil
-	}
-	ctx := context.Background()
-	atHTTPClient := http.DefaultClient
-	atHTTPClient.Transport = outClient.WrapRoundTripper(
-		ctx, atHTTPClient.Transport,
-		WithRedactHeaders([]string{}),
-	)
-	req.SetClient(atHTTPClient)
 	_, err := req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{

@@ -93,3 +93,51 @@ func TestEchoServerMiddleware(t *testing.T) {
 	respData = append(respData, 0xa)
 	assert.Equal(t, respData, resp.Bytes())
 }
+func TestOutgoingRequestEcho(t *testing.T) {
+	client := &Client{
+		config: &Config{},
+	}
+	publishCalled := false
+	var parentId *string
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		if payload.RawURL == "/from-gorilla" {
+			assert.NotNil(t, payload.ParentID)
+			parentId = payload.ParentID
+		} else if payload.URLPath == "/:slug/test" {
+			assert.Equal(t, *parentId, payload.MsgID)
+		}
+		publishCalled = true
+		return nil
+	}
+	router := echo.New()
+	router.Use(client.EchoMiddleware)
+	router.POST("/:slug/test", func(c echo.Context) (err error) {
+		body, err := io.ReadAll(c.Request().Body)
+		assert.NotEmpty(t, body)
+		reqData, _ := json.Marshal(exampleData2)
+		assert.Equal(t, reqData, body)
+		HTTPClient := http.DefaultClient
+		HTTPClient.Transport = client.WrapRoundTripper(
+			c.Request().Context(), HTTPClient.Transport,
+			WithRedactHeaders([]string{}),
+		)
+		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+
+		c.JSON(http.StatusAccepted, exampleData)
+		return
+	})
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	_, err := req.Post(ts.URL+"/slug-value/test",
+		req.Param{"param1": "abc", "param2": 123},
+		req.Header{
+			"Content-Type": "application/json",
+			"X-API-KEY":    "past-3",
+		},
+		req.BodyJSON(exampleData2),
+	)
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+
+}

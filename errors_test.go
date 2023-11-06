@@ -65,15 +65,8 @@ func TestErrorReporting(t *testing.T) {
 		assert.Equal(t, GoOutgoing, payload.SdkType)
 		return nil
 	}
-	ctx := context.Background()
-	atHTTPClient := http.DefaultClient
-	atHTTPClient.Transport = outClient.WrapRoundTripper(
-		ctx, atHTTPClient.Transport,
-		WithRedactHeaders([]string{}),
-	)
-	q := req.New()
-	q.SetClient(atHTTPClient)
-	_, err := q.Post(ts.URL+"/test",
+
+	_, err := req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{
 			"Content-Type": "application/json",

@@ -150,3 +150,42 @@ func TestGinMiddlewareGET(t *testing.T) {
 	assert.True(t, publishCalled)
 	assert.Equal(t, respData, resp.Bytes())
 }
+
+func TestOutgoingRequestGin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	client := &Client{
+		config: &Config{},
+	}
+	var publishCalled bool
+	router := gin.New()
+	router.Use(client.GinMiddleware)
+	var parentId *string
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		if payload.RawURL == "/from-gorilla" {
+			assert.NotNil(t, payload.ParentID)
+			parentId = payload.ParentID
+		} else if payload.URLPath == "/:slug/test" {
+			assert.Equal(t, *parentId, payload.MsgID)
+		}
+		publishCalled = true
+		return nil
+	}
+	router.GET("/:slug/test", func(c *gin.Context) {
+		HTTPClient := http.DefaultClient
+		HTTPClient.Transport = client.WrapRoundTripper(
+			c.Request.Context(), HTTPClient.Transport,
+			WithRedactHeaders([]string{}),
+		)
+		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+
+		c.JSON(http.StatusAccepted, gin.H{"hello": "world"})
+	})
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	_, err := req.Get(ts.URL + "/slug-value/test")
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+
+}

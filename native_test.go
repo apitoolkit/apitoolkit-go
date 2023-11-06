@@ -245,3 +245,41 @@ func TestChiMiddleware(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
 }
+
+func TestOutgoingRequestChi(t *testing.T) {
+	client := &Client{
+		config: &Config{},
+	}
+	var publishCalled bool
+	router := chi.NewRouter()
+	router.Use(client.ChiMiddleware)
+	var parentId *string
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		fmt.Println(payload.ParentID, payload.RawURL, parentId)
+		if payload.RawURL == "/from-gorilla" {
+			assert.NotNil(t, payload.ParentID)
+			parentId = payload.ParentID
+		} else if payload.URLPath == "/:slug/test" {
+			assert.Equal(t, *parentId, payload.MsgID)
+		}
+		publishCalled = true
+		return nil
+	}
+	router.Get("/:slug/test", func(w http.ResponseWriter, r *http.Request) {
+		HTTPClient := http.DefaultClient
+		HTTPClient.Transport = client.WrapRoundTripper(
+			r.Context(), HTTPClient.Transport,
+			WithRedactHeaders([]string{}),
+		)
+		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+
+		fmt.Fprint(w, "Hello world")
+	})
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+	_, err := req.Get(ts.URL + "/slug-value/test")
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+
+}

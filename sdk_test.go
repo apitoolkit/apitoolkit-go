@@ -94,7 +94,12 @@ func TestOutgoingMiddleware(t *testing.T) {
 		assert.Equal(t, "GET", payload.Method)
 		assert.Equal(t, "/from-gorilla", payload.URLPath)
 		assert.Equal(t, map[string]string(nil), payload.PathParams)
-		assert.Equal(t, "/from-gorilla", payload.RawURL)
+		assert.Equal(t, map[string][]string{
+			"param1": {"abc"},
+			"param2": {"123"},
+		}, payload.QueryParams)
+
+		assert.Equal(t, "/from-gorilla?param1=abc&param2=123", payload.RawURL)
 		assert.Equal(t, http.StatusServiceUnavailable, payload.StatusCode)
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
 		assert.Equal(t, GoOutgoing, payload.SdkType)
@@ -112,7 +117,7 @@ func TestOutgoingMiddleware(t *testing.T) {
 			r.Context(), atHTTPClient.Transport,
 			WithRedactHeaders([]string{}),
 		)
-		_, _ = atHTTPClient.Get("http://localhost:3000/from-gorilla")
+		_, _ = atHTTPClient.Get("http://localhost:3000/from-gorilla?param1=abc&param2=123")
 		jsonByte, err := json.Marshal(exampleData)
 		assert.NoError(t, err)
 

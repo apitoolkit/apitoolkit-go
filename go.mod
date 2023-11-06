@@ -12,7 +12,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-errors/errors v1.5.1
 	github.com/gofiber/fiber/v2 v2.49.2
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/gorilla/mux v1.8.0
 	github.com/imroc/req v0.3.2
 	github.com/klauspost/compress v1.17.1 // indirect
@@ -21,5 +21,5 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/stretchr/testify v1.8.4
 	github.com/valyala/fasthttp v1.50.0
-	google.golang.org/api v0.139.0
+	google.golang.org/api v0.149.0
 )

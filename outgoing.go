@@ -20,7 +20,7 @@ type roundTripper struct {
 
 func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	defer func() {
-		ReportError(req.Context(), err)
+		ReportError(rt.ctx, err)
 	}()
 
 	if rt.client == nil {
@@ -80,7 +80,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 
 	pErr := rt.client.PublishMessage(req.Context(), payload)
 	if pErr != nil {
-		ReportError(req.Context(), pErr)
+		ReportError(rt.ctx, pErr)
 		if rt.client.config.Debug {
 			log.Println("APIToolkit: unable to publish outgoing request payload to pubsub.")
 		}

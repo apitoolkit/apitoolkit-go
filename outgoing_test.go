@@ -1,6 +1,5 @@
-//go:build integration
-
 package apitoolkit
+
 
 import (
 	"context"
@@ -14,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReportingInteg(t *testing.T) {
+func TestReporting(t *testing.T) {
 	ctx := context.Background()
 	cfg := Config{
 		APIKey:             os.Getenv("APITOOLKIT_KEY"),

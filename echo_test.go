@@ -3,7 +3,6 @@ package apitoolkit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -51,7 +50,6 @@ func TestEchoServerMiddleware(t *testing.T) {
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
 		assert.Equal(t, GoDefaultSDKType, payload.SdkType)
 
-		fmt.Println(string(payload.ResponseBody))
 		reqData, _ := json.Marshal(exampleData2)
 		respData, _ := json.Marshal(exampleDataRedacted)
 		assert.Equal(t, reqData, payload.RequestBody)

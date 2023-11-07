@@ -166,6 +166,61 @@ func TestGorillaGoMiddleware(t *testing.T) {
 	assert.True(t, publishCalled)
 }
 
+func TestOutgoingRequestGorilla(t *testing.T) {
+	client := &Client{
+		config: &Config{
+			Debug:              true,
+			VerboseDebug:       true,
+			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
+			RedactResponseBody: exampleDataRedaction,
+		},
+	}
+	var publishCalled bool
+	var parentId *string
+	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+		if payload.RawURL == "/from-gorilla" {
+			assert.NotNil(t, payload.ParentID)
+			parentId = payload.ParentID
+		} else if payload.URLPath == "/{param1:[a-z]+}/test" {
+			assert.Equal(t, *parentId, payload.MsgID)
+		}
+		publishCalled = true
+		return nil
+	}
+	handlerFn := func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, body)
+
+		HTTPClient := http.DefaultClient
+		HTTPClient.Transport = client.WrapRoundTripper(
+			r.Context(), HTTPClient.Transport,
+			WithRedactHeaders([]string{}),
+		)
+		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+
+		w.WriteHeader(http.StatusAccepted)
+		w.Write([]byte("Hello world"))
+	}
+	r := mux.NewRouter()
+	r.Use(client.GorillaMuxMiddleware)
+	r.HandleFunc("/{param1:[a-z]+}/test", handlerFn).Methods(http.MethodPost)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	_, err := req.Post(ts.URL+"/paramval/test",
+		req.Param{"param1": "abc", "param2": 123},
+		req.Header{
+			"Content-Type": "application/json",
+			"X-API-KEY":    "past-3",
+		},
+		req.BodyJSON(exampleData2),
+	)
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+}
+
 func TestChiMiddleware(t *testing.T) {
 	client := &Client{
 		config: &Config{

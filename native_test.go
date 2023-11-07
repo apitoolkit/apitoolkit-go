@@ -153,7 +153,6 @@ func TestGorillaGoMiddleware(t *testing.T) {
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
-	fmt.Println("ts.url", ts.URL)
 
 	_, err := req.Post(ts.URL+"/paramval/test",
 		req.Param{"param1": "abc", "param2": 123},
@@ -232,7 +231,6 @@ func TestChiMiddleware(t *testing.T) {
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
-	fmt.Println("ts.url", ts.URL)
 
 	_, err := req.Post(ts.URL+"/paramval/test",
 		req.Param{"param1": "abc", "param2": 123},
@@ -255,7 +253,6 @@ func TestOutgoingRequestChi(t *testing.T) {
 	router.Use(client.ChiMiddleware)
 	var parentId *string
 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
-		fmt.Println(payload.ParentID, payload.RawURL, parentId)
 		if payload.RawURL == "/from-gorilla" {
 			assert.NotNil(t, payload.ParentID)
 			parentId = payload.ParentID

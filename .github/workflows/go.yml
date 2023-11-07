@@ -47,6 +47,8 @@ jobs:
 
     - name: Test
       run: go test -v -count=1 -race -shuffle=on -cover ./...
+      env:
+        APITOOLKIT_KEY: ${{ secrets.APITOOLKIT_KEY }}
 
 
   build:

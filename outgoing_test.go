@@ -1,6 +1,5 @@
 package apitoolkit
 
-
 import (
 	"context"
 	"net/http"

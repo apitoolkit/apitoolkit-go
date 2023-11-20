@@ -19,6 +19,6 @@ require (
 	github.com/labstack/echo/v4 v4.11.2
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/stretchr/testify v1.8.4
-	github.com/valyala/fasthttp v1.50.0
+	github.com/valyala/fasthttp v1.51.0
 	google.golang.org/api v0.150.0
 )

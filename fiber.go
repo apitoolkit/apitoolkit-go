@@ -25,7 +25,7 @@ func (c *Client) FiberMiddleware(ctx *fiber.Ctx) error {
 
 	respHeaders := map[string][]string{}
 	for k, v := range ctx.GetRespHeaders() {
-		respHeaders[k] = []string{v}
+		respHeaders[k] = v
 	}
 
 	payload := c.buildFastHTTPPayload(GoFiberSDKType, start,

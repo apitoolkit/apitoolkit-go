@@ -15,6 +15,7 @@ type ctxKey string
 var (
 	ErrorListCtxKey         = ctxKey("error-list")
 	CurrentRequestMessageID = ctxKey("current-req-msg-id")
+	CurrentClient 					= ctxKey("current=apitoolkit-client")
 )
 
 // ATError is the Apitoolkit error type/object

@@ -26,11 +26,16 @@ func (w *ginBodyLogWriter) WriteString(s string) (int, error) {
 }
 
 func (c *Client) GinMiddleware(ctx *gin.Context) {
+	// Register the client in the context, 
+	// so it can be used for outgoing requests with little ceremony
+	ctx.Set(string(CurrentClient), c)
+
 	msgID := uuid.Must(uuid.NewRandom())
 	ctx.Set(string(CurrentRequestMessageID), msgID)
 	errorList := []ATError{}
 	ctx.Set(string(ErrorListCtxKey), &errorList)
 	newCtx := context.WithValue(ctx.Request.Context(), ErrorListCtxKey, &errorList)
+	newCtx = context.WithValue(newCtx, CurrentClient, c)
 	newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 	ctx.Request = ctx.Request.WithContext(newCtx)
 

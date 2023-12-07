@@ -171,12 +171,10 @@ func TestOutgoingRequestGin(t *testing.T) {
 		return nil
 	}
 	router.GET("/:slug/test", func(c *gin.Context) {
-		HTTPClient := http.DefaultClient
-		HTTPClient.Transport = client.WrapRoundTripper(
-			c.Request.Context(), HTTPClient.Transport,
-			WithRedactHeaders([]string{}),
-		)
-		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+	
+
+		hClient := HTTPClient(c.Request.Context()) 
+		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
 		c.JSON(http.StatusAccepted, gin.H{"hello": "world"})
 	})

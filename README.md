@@ -130,9 +130,7 @@ func main() {
 ### Golang Chi HTTP router integration 
 ```go
 import (
-  	// Import the apitoolkit golang sdk
     apitoolkit "github.com/apitoolkit/apitoolkit-go"
-    "github.com/go-chi/chi/v5"
 )
 
 func main() {
@@ -169,7 +167,6 @@ func main() {
 	if err != nil {
     		panic(err)
 	}
-
 
   	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
   	router.Use(apitoolkitClient.Middleware)
@@ -219,19 +216,22 @@ To learn more about jsonpath to help form your queries, please take a look at th
 
 ## Outgoing Requests
 
+Access an instrumented http client which will 
+automatically monitor requests made to third parties. These outgoing requests can be monitored from the apitoolkit dashboard
+
 ```go
-    ctx := context.Background()
-    HTTPClient := http.DefaultClient
-    HTTPClient.Transport = apitoolkitClient.WrapRoundTripper(
-        ctx, HTTPClient.Transport,
-        WithRedactHeaders([]string{}),
-    )
+    httpClient := apitoolkit.HTTPClient(ctx)
+    httpClient.Post(..) // Use the client like any regular golang http client. 
 
 ```
 
-The code above shows how to use the custom roundtripper to replace the transport in the default http client.
-The resulting HTTP client can be used for any purpose, but will send a copy of all incoming and outgoing requests
-to the apitoolkit servers. So to allow monitoring outgoing request from your servers use the `HTTPClient` to make http requests.
+You can redact fields using functional options to specify what fields to redact. 
+eg. 
+
+```go
+    httpClient := apitoolkit.HTTPClient(ctx, apitoolkit.WithRedactHeaders("ABC", "$abc.xyz"))
+    httpClient.Post(..) // Use the client like any regular golang http client. 
+```
 
 ## Report Errors
 
@@ -242,139 +242,11 @@ Examples:
 **Native Go**
 
 ```go
-package main
-
-import (
-	"fmt"
-	"net/http"
-	apitoolkit "github.com/apitoolkit/apitoolkit-go"
-)
-
-func main() {
-	ctx := context.Background()
-	apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "<API_KEY>"})
-	if err != nil {
-		panic(err)
-	}
-
-	helloHandler := func(w http.ResponseWriter, r *http.Request) {
-		file, err := os.Open("non-existing-file.txt")
-		if err != nil {
-			// Report the error to apitoolkit
-			apitoolkit.ReportError(r.Context(), err)
-		}
-		fmt.Fprintln(w, "{\"Hello\": \"World!\"}")
-	}
-
-	http.Handle("/", apitoolkitClient.Middleware(http.HandlerFunc(helloHandler)))
-
-	if err := http.ListenAndServe(":8089", nil); err != nil {
-		fmt.Println("Server error:", err)
-	}
-}
-
-```
-
-**Gin**
-
-```go
-package main
-
-import (
-	"github.com/gin-gonic/gin"
-	apitoolkit "github.com/apitoolkit/apitoolkit-go"
-)
-
-func main() {
-	r := gin.Default()
-	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-		panic(err)
-	}
-
-	r.Use(apitoolkitClient.GinMiddleware)
-
-	r.GET("/", func(c *gin.Context) {
-		file, err := os.Open("non-existing-file.txt")
-		if err != nil {
-			// Report an error to apitoolkit
-			apitoolkit.ReportError(c.Request.Context(), err)
-		}
-		c.String(http.StatusOK, "Hello, World!")
-	})
-
-	r.Run(":8080")
-}
-```
-
-**Echo**
-
-```go
-package main
-
-import (
-	//... other imports
-	apitoolkit "github.com/apitoolkit/apitoolkit-go"
-)
-
-func main() {
-	e := echo.New()
-	ctx := context.Background()
-
-	apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "<API_KEY>"})
-	if err != nil {
-		panic(err)
-	}
-
-	e.Use(apitoolkitClient.EchoMiddleware)
-
-	e.GET("/", hello)
-
-	e.Logger.Fatal(e.Start(":1323"))
-}
-
-func hello(c echo.Context) error {
-	file, err := os.Open("non-existing-file.txt")
-	if err != nil {
-		apitoolkit.ReportError(c.Request().Context(), err)
-	}
-	log.Println(file)
-	return c.String(http.StatusOK, "Hello, World!")
-}
-
-```
-
-**Gorilla mux**
-
-```go
-import (
-	//... other imports
-	apitoolkit "github.com/apitoolkit/apitoolkit-go"
-)
-
-func main() {
-	r := mux.NewRouter()
-	ctx := context.Background()
-
-	apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "<API_KEY>"})
-	if err != nil {
-		panic(err)
-	}
-	r.Use(apitoolkitClient.GorillaMuxMiddleware)
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err := os.Open("mux.json")
-		if err != nil {
-			// Report the error to apitoolkit
-			apitoolkit.ReportError(r.Context(), err)
-		}
-		fmt.Fprintln(w, "Hello, World!")
-	})
-
-	server := &http.Server{Addr: ":8080", Handler: r}
-	err = server.ListenAndServe()
-	if err != nil {
-		fmt.Println(err)
-	}
-}
+    file, err := os.Open("non-existing-file.txt")
+    if err != nil {
+        // Report the error to apitoolkit
+        // Ensure that the ctx is the context which is passed down from the handlers.
+        apitoolkit.ReportError(ctx, err)
+    }
 
 ```

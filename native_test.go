@@ -192,12 +192,8 @@ func TestOutgoingRequestGorilla(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 
-		HTTPClient := http.DefaultClient
-		HTTPClient.Transport = client.WrapRoundTripper(
-			r.Context(), HTTPClient.Transport,
-			WithRedactHeaders([]string{}),
-		)
-		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+		hClient := HTTPClient(r.Context())
+		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
 		w.WriteHeader(http.StatusAccepted)
 		w.Write([]byte("Hello world"))
@@ -318,12 +314,8 @@ func TestOutgoingRequestChi(t *testing.T) {
 		return nil
 	}
 	router.Get("/:slug/test", func(w http.ResponseWriter, r *http.Request) {
-		HTTPClient := http.DefaultClient
-		HTTPClient.Transport = client.WrapRoundTripper(
-			r.Context(), HTTPClient.Transport,
-			WithRedactHeaders([]string{}),
-		)
-		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+		hClient := HTTPClient(r.Context()) 
+		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
 		fmt.Fprint(w, "Hello world")
 	})

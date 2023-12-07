@@ -126,7 +126,6 @@ func TestOutgoingRequestFiber(t *testing.T) {
 		HTTPClient := http.DefaultClient
 		HTTPClient.Transport = client.WrapRoundTripper(
 			c.UserContext(), HTTPClient.Transport,
-			WithRedactHeaders([]string{}),
 		)
 		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
 

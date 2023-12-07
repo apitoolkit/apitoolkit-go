@@ -88,7 +88,34 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 	return res, err
 }
 
+func HTTPClient(ctx context.Context, opts ...RoundTripperOption) *http.Client {
+	client, ok := ctx.Value(CurrentClient).(*Client)
+	if !ok {
+		log.Println("APIToolkit: no apitoolkit instance was found in context. Are you using the apitoolkit middleware correctly?")
+		return http.DefaultClient
+	}
+
+	// Run the roundTripperConfig to extract out a httpClient Transport
+	cfg := new(roundTripperConfig)
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	httpClient := http.DefaultClient
+	if cfg.HTTPClient != nil {
+		// Use httpClient supplied by user.
+		httpClient = cfg.HTTPClient
+	}
+
+	httpClient.Transport = client.WrapRoundTripper(
+		ctx, httpClient.Transport,
+		opts...,
+	)
+	return httpClient
+}
+
 type roundTripperConfig struct {
+	HTTPClient         *http.Client
 	RedactHeaders      []string
 	RedactRequestBody  []string
 	RedactResponseBody []string
@@ -96,19 +123,26 @@ type roundTripperConfig struct {
 
 type RoundTripperOption func(*roundTripperConfig)
 
-func WithRedactHeaders(headers []string) RoundTripperOption {
+// WithHTTPClient allows you supply your own custom http client
+func WithHTTPClient(httpClient *http.Client) RoundTripperOption {
+	return func(rc *roundTripperConfig) {
+		rc.HTTPClient = httpClient
+	}
+}
+
+func WithRedactHeaders(headers ...string) RoundTripperOption {
 	return func(rc *roundTripperConfig) {
 		rc.RedactHeaders = headers
 	}
 }
 
-func WithRedactRequestBody(fields []string) RoundTripperOption {
+func WithRedactRequestBody(fields ...string) RoundTripperOption {
 	return func(rc *roundTripperConfig) {
 		rc.RedactRequestBody = fields
 	}
 }
 
-func WithRedactResponseBody(fields []string) RoundTripperOption {
+func WithRedactResponseBody(fields ...string) RoundTripperOption {
 	return func(rc *roundTripperConfig) {
 		rc.RedactResponseBody = fields
 	}

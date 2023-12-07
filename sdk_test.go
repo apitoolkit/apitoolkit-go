@@ -112,11 +112,7 @@ func TestOutgoingMiddleware(t *testing.T) {
 		body, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
-		atHTTPClient := http.DefaultClient
-		atHTTPClient.Transport = outClient.WrapRoundTripper(
-			r.Context(), atHTTPClient.Transport,
-			WithRedactHeaders([]string{}),
-		)
+		atHTTPClient := HTTPClient(r.Context())
 		_, _ = atHTTPClient.Get("http://localhost:3000/from-gorilla?param1=abc&param2=123")
 		jsonByte, err := json.Marshal(exampleData)
 		assert.NoError(t, err)

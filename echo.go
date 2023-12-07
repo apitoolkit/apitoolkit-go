@@ -38,6 +38,10 @@ func (w *echoBodyLogWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 // EchoMiddleware middleware for echo framework, collects requests, response and publishes the payload
 func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) (err error) {
+		// Register the client in the context,
+		// so it can be used for outgoing requests with little ceremony
+		ctx.Set(string(CurrentClient), c)
+
 		msgID := uuid.Must(uuid.NewRandom())
 		ctx.Set(string(CurrentRequestMessageID), msgID)
 
@@ -45,6 +49,7 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		ctx.Set(string(ErrorListCtxKey), &errorList)
 		newCtx := context.WithValue(ctx.Request().Context(), ErrorListCtxKey, &errorList)
 		newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
+		newCtx = context.WithValue(newCtx, CurrentClient, c)
 		ctx.SetRequest(ctx.Request().WithContext(newCtx))
 
 		var reqBuf []byte

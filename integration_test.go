@@ -38,11 +38,7 @@ func TestReportingInteg(t *testing.T) {
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	atHTTPClient := http.DefaultClient
-	atHTTPClient.Transport = client.WrapRoundTripper(
-		ctx, atHTTPClient.Transport,
-		WithRedactHeaders([]string{}),
-	)
+	atHTTPClient := HTTPClient(ctx) 
 	req.SetClient(atHTTPClient)
 	_, err = req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},

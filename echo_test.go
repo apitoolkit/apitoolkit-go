@@ -117,7 +117,6 @@ func TestOutgoingRequestEcho(t *testing.T) {
 		HTTPClient := http.DefaultClient
 		HTTPClient.Transport = client.WrapRoundTripper(
 			c.Request().Context(), HTTPClient.Transport,
-			WithRedactHeaders([]string{}),
 		)
 		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
 

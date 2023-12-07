@@ -9,11 +9,16 @@ import (
 )
 
 func (c *Client) FiberMiddleware(ctx *fiber.Ctx) error {
+	// Register the client in the context,
+	// so it can be used for outgoing requests with little ceremony
+	ctx.Locals(string(CurrentClient), c)
+
 	msgID := uuid.Must(uuid.NewRandom())
 	ctx.Locals(string(CurrentRequestMessageID), msgID)
 	errorList := []ATError{}
 	ctx.Locals(string(ErrorListCtxKey), &errorList)
 	newCtx := context.WithValue(ctx.Context(), ErrorListCtxKey, &errorList)
+	newCtx = context.WithValue(newCtx, CurrentClient, c)
 	newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 	ctx.SetUserContext(newCtx)
 

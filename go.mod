@@ -11,7 +11,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-errors/errors v1.5.1
 	github.com/gofiber/fiber/v2 v2.50.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/imroc/req v0.3.2
 	github.com/klauspost/compress v1.17.1 // indirect

@@ -91,6 +91,7 @@ func TestEchoServerMiddleware(t *testing.T) {
 	respData = append(respData, 0xa)
 	assert.Equal(t, respData, resp.Bytes())
 }
+
 func TestOutgoingRequestEcho(t *testing.T) {
 	client := &Client{
 		config: &Config{},
@@ -136,5 +137,4 @@ func TestOutgoingRequestEcho(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }

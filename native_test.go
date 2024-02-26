@@ -314,7 +314,7 @@ func TestOutgoingRequestChi(t *testing.T) {
 		return nil
 	}
 	router.Get("/:slug/test", func(w http.ResponseWriter, r *http.Request) {
-		hClient := HTTPClient(r.Context()) 
+		hClient := HTTPClient(r.Context())
 		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
 		fmt.Fprint(w, "Hello world")
@@ -325,5 +325,4 @@ func TestOutgoingRequestChi(t *testing.T) {
 	_, err := req.Get(ts.URL + "/slug-value/test")
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }

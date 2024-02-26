@@ -26,7 +26,7 @@ func (w *ginBodyLogWriter) WriteString(s string) (int, error) {
 }
 
 func (c *Client) GinMiddleware(ctx *gin.Context) {
-	// Register the client in the context, 
+	// Register the client in the context,
 	// so it can be used for outgoing requests with little ceremony
 	ctx.Set(string(CurrentClient), c)
 

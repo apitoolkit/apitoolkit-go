@@ -171,9 +171,7 @@ func TestOutgoingRequestGin(t *testing.T) {
 		return nil
 	}
 	router.GET("/:slug/test", func(c *gin.Context) {
-	
-
-		hClient := HTTPClient(c.Request.Context()) 
+		hClient := HTTPClient(c.Request.Context())
 		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
 		c.JSON(http.StatusAccepted, gin.H{"hello": "world"})
@@ -185,5 +183,4 @@ func TestOutgoingRequestGin(t *testing.T) {
 	_, err := req.Get(ts.URL + "/slug-value/test")
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }

@@ -77,6 +77,7 @@ func TestErrorReporting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
 }
+
 func TestGinMiddlewareGETError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	client := &Client{

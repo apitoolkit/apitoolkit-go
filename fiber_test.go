@@ -15,7 +15,6 @@ import (
 )
 
 func TestFiberMiddleware(t *testing.T) {
-
 	client := &Client{
 		config: &Config{
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
@@ -143,7 +142,6 @@ func TestOutgoingRequestFiber(t *testing.T) {
 	_, err := router.Test(ts)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
-
 }
 
 // func TestFiberMiddlewareGET(t *testing.T) {

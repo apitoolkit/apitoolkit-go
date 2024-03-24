@@ -46,12 +46,29 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 	blw := &ginBodyLogWriter{body: bytes.NewBuffer([]byte{}), ResponseWriter: ctx.Writer}
 	ctx.Writer = blw
 
-	ctx.Next()
-
 	pathParams := map[string]string{}
 	for _, param := range ctx.Params {
 		pathParams[param.Key] = param.Value
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			ReportError(ctx.Request.Context(), err.(error))
+			payload := c.buildPayload(GoGinSDKType, start,
+				ctx.Request, 500,
+				reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(),
+				pathParams, ctx.FullPath(),
+				c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+				errorList,
+				msgID,
+				nil,
+			)
+			c.PublishMessage(ctx, payload)
+			panic(err)
+		}
+	}()
+
+	ctx.Next()
 
 	payload := c.buildPayload(GoGinSDKType, start,
 		ctx.Request, ctx.Writer.Status(),

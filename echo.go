@@ -65,16 +65,30 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		mw := io.MultiWriter(ctx.Response().Writer, resBody)
 		writer := &echoBodyLogWriter{Writer: mw, ResponseWriter: ctx.Response().Writer}
 		ctx.Response().Writer = writer
-
-		// pass on request handling
-		if err = next(ctx); err != nil {
-			ctx.Error(err)
-		}
-
 		pathParams := map[string]string{}
 		for _, paramName := range ctx.ParamNames() {
 			pathParams[paramName] = ctx.Param(paramName)
 		}
+
+		defer func() {
+			if err := recover(); err != nil {
+				ReportError(ctx.Request().Context(), err.(error))
+				payload := c.buildPayload(GoDefaultSDKType, startTime,
+					ctx.Request(), 500,
+					reqBuf, resBody.Bytes(), ctx.Response().Header().Clone(),
+					pathParams, ctx.Path(),
+					c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+					errorList,
+					msgID,
+					nil,
+				)
+				c.PublishMessage(ctx.Request().Context(), payload)
+				panic(err)
+			}
+		}()
+
+		// pass on request handling
+		err = next(ctx)
 
 		// proceed post-response processing
 		payload := c.buildPayload(GoDefaultSDKType, startTime,
@@ -87,6 +101,6 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			nil,
 		)
 		c.PublishMessage(ctx.Request().Context(), payload)
-		return
+		return err
 	}
 }

@@ -2,6 +2,7 @@ package apitoolkit
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	fiber "github.com/gofiber/fiber/v2"
@@ -22,16 +23,34 @@ func (c *Client) FiberMiddleware(ctx *fiber.Ctx) error {
 	newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 	ctx.SetUserContext(newCtx)
 
-	start := time.Now()
-
-	if err := ctx.Next(); err != nil {
-		return err
-	}
-
 	respHeaders := map[string][]string{}
 	for k, v := range ctx.GetRespHeaders() {
 		respHeaders[k] = v
 	}
+
+	start := time.Now()
+	defer func() {
+		if err := recover(); err != nil {
+			if _, ok := err.(error); !ok {
+				err = errors.New(err.(string))
+			}
+			ReportError(ctx.UserContext(), err.(error))
+			payload := c.buildFastHTTPPayload(GoFiberSDKType, start,
+				ctx.Context(), 500,
+				ctx.Request().Body(), ctx.Response().Body(), respHeaders,
+				ctx.AllParams(), ctx.Route().Path,
+				c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
+				errorList,
+				msgID,
+				nil,
+				string(ctx.Context().Referer()),
+			)
+			c.PublishMessage(ctx.Context(), payload)
+			panic(err)
+		}
+	}()
+
+	err := ctx.Next()
 
 	payload := c.buildFastHTTPPayload(GoFiberSDKType, start,
 		ctx.Context(), ctx.Response().StatusCode(),
@@ -45,5 +64,5 @@ func (c *Client) FiberMiddleware(ctx *fiber.Ctx) error {
 	)
 
 	c.PublishMessage(ctx.Context(), payload)
-	return nil
+	return err
 }

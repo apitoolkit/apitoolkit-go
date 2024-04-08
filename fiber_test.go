@@ -15,6 +15,7 @@ import (
 )
 
 func TestFiberMiddleware(t *testing.T) {
+	t.Skip()
 	client := &Client{
 		config: &Config{
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},

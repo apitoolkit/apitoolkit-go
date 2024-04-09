@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -72,6 +73,9 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		defer func() {
 			if err := recover(); err != nil {
+				if _, ok := err.(error); !ok {
+					err = errors.New(err.(string))
+				}
 				ReportError(ctx.Request().Context(), err.(error))
 				payload := c.buildPayload(GoDefaultSDKType, startTime,
 					ctx.Request(), 500,

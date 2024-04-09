@@ -65,6 +65,7 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 
 		errorList := []ATError{}
 		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
+		newCtx = context.WithValue(newCtx, CurrentClient, c)
 		req = req.WithContext(newCtx)
 
 		reqBuf, _ := io.ReadAll(req.Body)

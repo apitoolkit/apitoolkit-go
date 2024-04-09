@@ -18,11 +18,11 @@ func (c *Client) FiberMiddleware(ctx *fiber.Ctx) error {
 	ctx.Locals(string(CurrentRequestMessageID), msgID)
 	errorList := []ATError{}
 	ctx.Locals(string(ErrorListCtxKey), &errorList)
+	ctx.Locals(CurrentClient, c)
 	newCtx := context.WithValue(ctx.Context(), ErrorListCtxKey, &errorList)
 	newCtx = context.WithValue(newCtx, CurrentClient, c)
 	newCtx = context.WithValue(newCtx, CurrentRequestMessageID, msgID)
 	ctx.SetUserContext(newCtx)
-
 	respHeaders := map[string][]string{}
 	for k, v := range ctx.GetRespHeaders() {
 		respHeaders[k] = v
@@ -51,7 +51,6 @@ func (c *Client) FiberMiddleware(ctx *fiber.Ctx) error {
 	}()
 
 	err := ctx.Next()
-
 	payload := c.buildFastHTTPPayload(GoFiberSDKType, start,
 		ctx.Context(), ctx.Response().StatusCode(),
 		ctx.Request().Body(), ctx.Response().Body(), respHeaders,

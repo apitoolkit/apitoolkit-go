@@ -159,10 +159,10 @@ func NewClient(ctx context.Context, cfg Config) (*Client, error) {
 }
 
 // Close cleans up the apitoolkit client. It should be called before the app shorts down, ideally as a defer call.
-func (c *Client) Close() error {
-	c.goReqsTopic.Stop()
-	return c.pubsubClient.Close()
-}
+// func (c *Client) Close() error {
+// 	c.goReqsTopic.Stop()
+// 	return c.pubsubClient.Close()
+// }
 
 // PublishMessage publishes payload to a gcp cloud console
 func (c *Client) publishMessage(ctx context.Context, payload Payload) error {

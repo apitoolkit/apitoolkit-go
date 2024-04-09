@@ -52,59 +52,55 @@ func TestOutgoingMiddleware(t *testing.T) {
 	}
 	var publishCalled bool
 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
-		assert.Equal(t, "POST", payload.Method)
-		assert.Equal(t, "/test", payload.URLPath)
-		assert.Equal(t, map[string]string(nil), payload.PathParams)
-		assert.Equal(t, map[string][]string{
-			"param1": {"abc"},
-			"param2": {"123"},
-		}, payload.QueryParams)
+		if payload.URLPath == "/test" {
+			assert.Equal(t, "POST", payload.Method)
+			assert.Equal(t, "/test", payload.URLPath)
+			assert.Equal(t, map[string]string(nil), payload.PathParams)
+			assert.Equal(t, map[string][]string{
+				"param1": {"abc"},
+				"param2": {"123"},
+			}, payload.QueryParams)
 
-		assert.Equal(t, map[string][]string{
-			"Accept-Encoding": {"gzip"},
-			"Content-Length":  {"437"},
-			"Content-Type":    {"application/json"},
-			"User-Agent":      {"Go-http-client/1.1"},
-			"X-Api-Key":       {"past-3"},
-		}, payload.RequestHeaders)
-		assert.Equal(t, map[string][]string{
-			"Content-Type": {"application/json"},
-			"X-Api-Key":    {"applicationKey"},
-		}, payload.ResponseHeaders)
-		assert.Equal(t, "/test?param1=abc&param2=123", payload.RawURL)
-		assert.Equal(t, http.StatusAccepted, payload.StatusCode)
-		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
-		assert.Equal(t, GoDefaultSDKType, payload.SdkType)
+			assert.Equal(t, map[string][]string{
+				"Accept-Encoding": {"gzip"},
+				"Content-Length":  {"437"},
+				"Content-Type":    {"application/json"},
+				"User-Agent":      {"Go-http-client/1.1"},
+				"X-Api-Key":       {"past-3"},
+			}, payload.RequestHeaders)
+			assert.Equal(t, map[string][]string{
+				"Content-Type": {"application/json"},
+				"X-Api-Key":    {"applicationKey"},
+			}, payload.ResponseHeaders)
+			assert.Equal(t, "/test?param1=abc&param2=123", payload.RawURL)
+			assert.Equal(t, http.StatusAccepted, payload.StatusCode)
+			assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
+			assert.Equal(t, GoDefaultSDKType, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+			reqData, _ := json.Marshal(exampleData2)
+			respData, _ := json.Marshal(exampleDataRedacted)
 
-		assert.Equal(t, reqData, payload.RequestBody)
-		assert.Equal(t, respData, payload.ResponseBody)
+			assert.Equal(t, reqData, payload.RequestBody)
+			assert.Equal(t, respData, payload.ResponseBody)
 
-		publishCalled = true
-		return nil
-	}
+			publishCalled = true
 
-	outClient := &Client{
-		config: &Config{},
-	}
+		} else {
+			assert.Equal(t, "GET", payload.Method)
+			assert.Equal(t, "/from-gorilla", payload.URLPath)
+			assert.Equal(t, map[string]string(nil), payload.PathParams)
+			assert.Equal(t, map[string][]string{
+				"param1": {"abc"},
+				"param2": {"123"},
+			}, payload.QueryParams)
 
-	outClient.PublishMessage = func(ctx context.Context, payload Payload) error {
-		assert.Equal(t, "GET", payload.Method)
-		assert.Equal(t, "/from-gorilla", payload.URLPath)
-		assert.Equal(t, map[string]string(nil), payload.PathParams)
-		assert.Equal(t, map[string][]string{
-			"param1": {"abc"},
-			"param2": {"123"},
-		}, payload.QueryParams)
+			assert.Equal(t, "/from-gorilla?param1=abc&param2=123", payload.RawURL)
+			assert.Equal(t, http.StatusServiceUnavailable, payload.StatusCode)
+			assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
+			assert.Equal(t, GoOutgoing, payload.SdkType)
+			assert.NotNil(t, payload.ParentID)
 
-		assert.Equal(t, "/from-gorilla?param1=abc&param2=123", payload.RawURL)
-		assert.Equal(t, http.StatusServiceUnavailable, payload.StatusCode)
-		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
-		assert.Equal(t, GoOutgoing, payload.SdkType)
-		assert.NotNil(t, payload.ParentID)
-
+		}
 		return nil
 	}
 

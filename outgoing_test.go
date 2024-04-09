@@ -22,7 +22,9 @@ func TestReporting(t *testing.T) {
 		Tags:               []string{"staging"},
 	}
 	client, err := NewClient(ctx, cfg)
-	defer client.Close()
+	if err != nil {
+		panic(err)
+	}
 	assert.NoError(t, err)
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +66,10 @@ func TestSugaredReporting(t *testing.T) {
 		Tags:               []string{"staging"},
 	}
 	client, err := NewClient(ctx, cfg)
-	defer client.Close()
+	if err != nil {
+		panic(err)
+	}
+
 	assert.NoError(t, err)
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {

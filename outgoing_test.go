@@ -25,6 +25,7 @@ func TestReporting(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	defer client.Close()
 	assert.NoError(t, err)
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +70,7 @@ func TestSugaredReporting(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	defer client.Close()
 
 	assert.NoError(t, err)
 
@@ -83,8 +85,6 @@ func TestSugaredReporting(t *testing.T) {
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	atHTTPClient := HTTPClient(ctx)
-	req.SetClient(atHTTPClient)
 	_, err = req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{

@@ -20,7 +20,9 @@ type roundTripper struct {
 
 func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	defer func() {
-		ReportError(rt.ctx, err)
+		if err != nil {
+			ReportError(rt.ctx, err)
+		}
 	}()
 
 	if rt.client == nil {

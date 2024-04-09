@@ -27,7 +27,7 @@ func TestReportingInteg(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
+	defer client.Close()
 	assert.NoError(t, err)
 
 	handlerFn := func(w http.ResponseWriter, r *http.Request) {
@@ -37,12 +37,9 @@ func TestReportingInteg(t *testing.T) {
 		err2 := errors.Wrap(err1, "wrapper from err2")
 		ReportError(r.Context(), err2)
 	}
-
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	atHTTPClient := HTTPClient(ctx)
-	req.SetClient(atHTTPClient)
 	_, err = req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{

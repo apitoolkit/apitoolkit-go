@@ -24,6 +24,9 @@ func TestReportingInteg(t *testing.T) {
 		Tags:               []string{"staging"},
 	}
 	client, err := NewClient(ctx, cfg)
+	if err != nil {
+		panic(err)
+	}
 	defer client.Close()
 	assert.NoError(t, err)
 
@@ -34,12 +37,9 @@ func TestReportingInteg(t *testing.T) {
 		err2 := errors.Wrap(err1, "wrapper from err2")
 		ReportError(r.Context(), err2)
 	}
-
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
 	defer ts.Close()
 
-	atHTTPClient := HTTPClient(ctx)
-	req.SetClient(atHTTPClient)
 	_, err = req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{

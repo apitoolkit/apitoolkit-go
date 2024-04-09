@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
-	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +27,6 @@ func TestErrorReporting(t *testing.T) {
 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
 		// x, _ := json.MarshalIndent(payload, "", "\t")
 		// fmt.Println(string(x))
-		pretty.Println(payload.Errors)
 		assert.NotEmpty(t, payload.Errors)
 		assert.Equal(t, "wrapper from err2 Example Error value", payload.Errors[0].Message)
 		assert.Equal(t, "Example Error value", payload.Errors[0].RootErrorMessage)
@@ -87,7 +85,6 @@ func TestGinMiddlewareGETError(t *testing.T) {
 	respData, _ := json.Marshal(exampleData)
 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
 		publishCalled = true
-		pretty.Println(payload)
 		return nil
 	}
 	router := gin.New()

@@ -3,6 +3,7 @@ package apitoolkit
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"time"
 
@@ -53,6 +54,9 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 
 	defer func() {
 		if err := recover(); err != nil {
+			if _, ok := err.(error); !ok {
+				err = errors.New(err.(string))
+			}
 			ReportError(ctx.Request.Context(), err.(error))
 			payload := c.buildPayload(GoGinSDKType, start,
 				ctx.Request, 500,

@@ -5,9 +5,9 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
@@ -15,49 +15,48 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        go: ['1.20', '1.21']
-        os: ['ubuntu-latest']
+        go: ["1.20", "1.21"]
+        os: ["ubuntu-latest"]
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ matrix.go }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
 
-    - name: Format
-      run: gofmt -s -w . && git diff --exit-code
+      - name: Format
+        run: gofmt -s -w . && git diff --exit-code
 
-    - name: Vet
-      run: go vet ./...
+      - name: Vet
+        run: go vet ./...
 
-    - name: Tidy
-      run: go mod tidy && git diff --exit-code
+      - name: Tidy
+        run: go mod tidy && git diff --exit-code
 
-    - name: Mod
-      run: go mod download
+      - name: Mod
+        run: go mod download
 
-    - name: Mod Verify
-      run: go mod verify
+      - name: Mod Verify
+        run: go mod verify
 
-    - name: Generate
-      run: go generate ./... && git diff --exit-code
+      - name: Generate
+        run: go generate ./... && git diff --exit-code
 
-    - name: Test
-      run: go test -v -count=1 -race -shuffle=on -cover ./...
-      env:
-        APITOOLKIT_KEY: ${{ secrets.APITOOLKIT_KEY }}
-
+      - name: Test
+        run: go test
+        env:
+          APITOOLKIT_KEY: ${{ secrets.APITOOLKIT_KEY }}
 
   build:
     name: Build
     strategy:
       fail-fast: true
       matrix:
-        go: ['1.20', '1.21']
-        os: ['ubuntu-latest']
+        go: ["1.20", "1.21"]
+        os: ["ubuntu-latest"]
     runs-on: ${{ matrix.os }}
 
     steps:

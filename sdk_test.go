@@ -120,7 +120,6 @@ func TestOutgoingMiddleware(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(client.Middleware(http.HandlerFunc(handlerFn)))
-	defer ts.Close()
 
 	_, err := req.Post(ts.URL+"/test",
 		req.Param{"param1": "abc", "param2": 123},

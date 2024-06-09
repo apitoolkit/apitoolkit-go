@@ -1,252 +1,111 @@
-[![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go)
+<div align="center">
 
-# API Toolkit Golang Client
+![APItoolkit's Logo](https://github.com/apitoolkit/.github/blob/main/images/logo-white.svg?raw=true#gh-dark-mode-only)
+![APItoolkit's Logo](https://github.com/apitoolkit/.github/blob/main/images/logo-black.svg?raw=true#gh-light-mode-only)
 
-The API Toolkit golang client is an sdk used to integrate golang web services with APIToolkit.
-It monitors incoming traffic, gathers the requests and sends the request to the apitoolkit servers.
+## Golang SDK
 
-## Design decisions:
+[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://discord.gg/dEB6EjQnKB) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_source=github-sdk) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go)
 
-- Use the gcp SDK to send real time traffic from REST APIs to the gcp topic
+APItoolkit is an end-to-end API and web services management toolkit for engineers and customer support teams. To integrate your Golang application with APItoolkit, you need to use this SDK to monitor incoming traffic, aggregate the requests, and then deliver them to the APItoolkit's servers.
 
-## How to Integrate:
+</div>
 
-First install the apitoolkit Go sdk:
-`go get github.com/apitoolkit/apitoolkit-go`
+---
 
-### Gin web server integration
-Then add apitoolkit to your app like so (Gin example):
+## Table of Contents
+
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Contributing and Help](#contributing-and-help)
+- [License](#license)
+
+---
+
+## Installation
+
+Kindly run the command below to install the SDK:
+
+```sh
+go get github.com/apitoolkit/apitoolkit-go
+```
+
+Then add github.com/apitoolkit/apitoolkit-go to the list of dependencies like so:
 
 ```go
 package main
 
 import (
-  	// Import the apitoolkit golang sdk
-  	apitoolkit "github.com/apitoolkit/apitoolkit-go"
+  apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
-
-func main() {
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-    		panic(err)
-	}
-
-  	router := gin.New()
-
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.GinMiddleware)
-
-  	// Register your handlers as usual and run the gin server as usual.
-  	router.POST("/:slug/test", func(c *gin.Context) {c.Text(200, "ok")})
- 	...
-}
-
 ```
 
-### Fiber Router server integration
+## Configuration
+
+Next, initialize APItoolkit in your application's entry point (e.g., `main.go`) like so:
+
 ```go
 package main
 
 import (
-  	// Import the apitoolkit golang sdk
-    apitoolkit "github.com/apitoolkit/apitoolkit-go"
-    fiber "github.com/gofiber/fiber/v2"
+  "context"
+  "log"
+  "net/http"
+  "github.com/labstack/echo/v4"
+  apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
 
 func main() {
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-    		panic(err)
-	}
+  ctx := context.Background()
 
-  	router := fiber.New()
+  // Initialize the client
+  apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "{ENTER_YOUR_API_KEY_HERE}"})
+  if err != nil {
+    panic(err)
+  }
 
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.FiberMiddleware)
+  router := echo.New()
 
-  	// Register your handlers as usual and run the gin server as usual.
-  	router.Post("/:slug/test", func(c *fiber.Ctx) {c.Status(200).JSON({"status":"ok"})})
- 	...
+  // Register APItoolkit's middleware
+  router.Use(apitoolkitClient.EchoMiddleware)
+
+  // router.Use(...)
+  // Other middleware
+
+  router.POST("/:slug/test", func(c echo.Context) error {
+    return c.String(http.StatusOK, "Ok, success!")
+  })
+
+  router.Start(":8080")
 }
 ```
 
-### Echo Router server integration
-```go
-package main
+> [!NOTE]
+> 
+> - This SDK supports multiple Golang frameworks Middleware (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdk), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdk), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdk), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdk)).
+> - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_source=github-sdk) generated from the APItoolkit dashboard.
 
-import (
-  	// Import the apitoolkit golang sdk
-    apitoolkit "github.com/apitoolkit/apitoolkit-go"
-    echo "github.com/labstack/echo/v4"
-)
+<br />
 
-func main() {
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-    		panic(err)
-	}
+> [!IMPORTANT]
+> 
+> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang?utm_source=github-sdk).
 
-  	router := echo.New()
+## Contributing and Help
 
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.EchoMiddleware)
+To contribute to the development of this SDK or request help from the community and our team, kindly do any of the following:
+- Read our [Contributors Guide](https://github.com/apitoolkit/.github/blob/main/CONTRIBUTING.md).
+- Join our community [Discord Server](https://discord.gg/dEB6EjQnKB).
+- Create a [new issue](https://github.com/apitoolkit/apitoolkit-dotnet/issues/new/choose) in this repository.
 
-  	// Register your handlers as usual and run the gin server as usual.
-  	router.POST("/:slug/test", func(c *fiber.Ctx) {c.JSON(200, {"status":"ok"})})
- 	...
-}
-```
+## License
 
+This repository is published under the [MIT](LICENSE) license.
 
-### Gorilla Mux Golang HTTP router integration 
-```go
-import (
-  	// Import the apitoolkit golang sdk
-    apitoolkit "github.com/apitoolkit/apitoolkit-go"
-    "github.com/gorilla/mux"
-)
+---
 
-func main() {
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-        panic(err)
-	}
+<div align="center">
+    
+<a href="https://apitoolkit.io?utm_source=apitoolkit_github_dotnetsdk" target="_blank" rel="noopener noreferrer"><img src="https://github.com/apitoolkit/.github/blob/main/images/icon.png?raw=true" width="40" /></a>
 
-  	router := mux.NewRouter()
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.GorillaMuxMiddleware)
-
-  	// Register your handlers as usual and run the gin server as usual.
-  	router.HandleFunc("/{slug:[a-z]+}/test", func(w http.ResponseWriter, r *http.Request) {..}).Methods(http.MethodPost)
- 	...
-}
-```
-
-
-### Golang Chi HTTP router integration 
-```go
-import (
-    apitoolkit "github.com/apitoolkit/apitoolkit-go"
-)
-
-func main() {
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-        panic(err)
-	}
-
-  	router := chi.NewRouter()
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.ChiMiddleware)
-
-  	// Register your handlers as usual and run the gin server as usual.
-  	router.Post("/{slug:[a-z]+}/test", func(w http.ResponseWriter, r *http.Request) {..})
- 	...
-}
-```
-
-### Native Golang HTTP router integration 
-Only use this as a last resort. Make a request via github issues if your routing library of choice is not supported.
-```go
-package main
-
-import (
-  	// Import the apitoolkit golang sdk
-    apitoolkit "github.com/apitoolkit/apitoolkit-go"
-    "github.com/gorilla/mux"
-)
-
-func main() {
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, err := apitoolkit.NewClient(context.Background(), apitoolkit.Config{APIKey: "<APIKEY>"})
-	if err != nil {
-    		panic(err)
-	}
-
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.Middleware)
-
- 	...
-}
-```
-
-
-
-## Client Redacting fields
-
-While it's possible to mark a field as redacted from the apitoolkit dashboard, this client also supports redacting at the client side.
-Client side redacting means that those fields would never leave your servers at all. So you feel safer that your sensitive data only stays on your servers.
-
-To mark fields that should be redacted, simply add them to the apitoolkit config struct.
-Eg:
-
-```go
-func main() {
-    	apitoolkitCfg := apitoolkit.Config{
-        	RedactHeaders: []string{"Content-Type", "Authorization", "Cookies"},
-        	RedactRequestBody: []string{"$.credit-card.cvv", "$.credit-card.name"},
-        	RedactResponseBody: []string{"$.message.error"},
-        	APIKey: "<APIKEY>",
-    	}
-
-  	// Initialize the client using your apitoolkit.io generated apikey
-  	apitoolkitClient, _ := apitoolkit.NewClient(context.Background(), apitoolkitCfg)
-
-  	router := gin.New()
-  	// Register with the corresponding middleware of your choice. For Gin router, we use the GinMiddleware method.
-  	router.Use(apitoolkitClient.GinMiddleware)
-  	// Register your handlers as usual and run the gin server as usual.
-  	router.POST("/:slug/test", func(c *gin.Context) {c.Text(200, "ok")})
- 	...
-}
-```
-
-It is important to note that while the `RedactHeaders` config field accepts a list of headers(case insensitive),
-the RedactRequestBody and RedactResponseBody expect a list of JSONPath strings as arguments.
-
-The choice of JSONPath was selected to allow you have great flexibility in descibing which fields within your responses are sensitive.
-Also note that these list of items to be redacted will be aplied to all endpoint requests and responses on your server.
-To learn more about jsonpath to help form your queries, please take a look at this cheatsheet:
-[https://lzone.de/cheat-sheet/JSONPath](https://lzone.de/cheat-sheet/JSONPath)
-
-## Outgoing Requests
-
-Access an instrumented http client which will 
-automatically monitor requests made to third parties. These outgoing requests can be monitored from the apitoolkit dashboard
-
-```go
-    httpClient := apitoolkit.HTTPClient(ctx)
-    httpClient.Post(..) // Use the client like any regular golang http client. 
-
-```
-
-You can redact fields using functional options to specify what fields to redact. 
-eg. 
-
-```go
-    httpClient := apitoolkit.HTTPClient(ctx, apitoolkit.WithRedactHeaders("ABC", "$abc.xyz"))
-    httpClient.Post(..) // Use the client like any regular golang http client. 
-```
-
-## Report Errors
-
-If you've used sentry, or bugsnag, or rollbar, then you're already familiar with this usecase.
-But you can report an error to apitoolkit. A difference, is that errors are always associated with a parent request, and helps you query and associate the errors which occured while serving a given customer request. To request errors to APIToolkit use call the `ReportError` method of `apitoolkit` not the client returned by `apitoolkit.NewClient` with the request context and the error to report
-Examples:
-
-**Native Go**
-
-```go
-    file, err := os.Open("non-existing-file.txt")
-    if err != nil {
-        // Report the error to apitoolkit
-        // Ensure that the ctx is the context which is passed down from the handlers.
-        apitoolkit.ReportError(ctx, err)
-    }
-
-```
+</div>

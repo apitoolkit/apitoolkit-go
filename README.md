@@ -5,7 +5,7 @@
 
 ## Golang SDK
 
-[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://discord.gg/dEB6EjQnKB) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_source=github-sdk) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go)
+[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://discord.gg/dEB6EjQnKB) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_source=github-sdks) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go)
 
 APItoolkit is an end-to-end API and web services management toolkit for engineers and customer support teams. To integrate your Golang application with APItoolkit, you need to use this SDK to monitor incoming traffic, aggregate the requests, and then deliver them to the APItoolkit's servers.
 
@@ -75,14 +75,14 @@ func main() {
 
 > [!NOTE]
 > 
-> - This SDK supports multiple Golang frameworks (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdk), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdk), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdk), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdk)). You can learn how to configure each framework using the provided Middleware (e.g.,  `EchoMiddleware`) in the respective linked docs above.
-> - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_source=github-sdk) generated from the APItoolkit dashboard.
+> - This SDK supports multiple Golang frameworks (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdks), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdks), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdks), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdks)). You can learn how to configure each framework using the provided Middleware (e.g.,  `EchoMiddleware`) in the respective linked docs above.
+> - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_source=github-sdks) generated from the APItoolkit dashboard.
 
 <br />
 
 > [!IMPORTANT]
 > 
-> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang?utm_source=github-sdk).
+> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang?utm_source=github-sdks).
 
 ## Contributing and Help
 
@@ -99,6 +99,6 @@ This repository is published under the [MIT](LICENSE) license.
 
 <div align="center">
     
-<a href="https://apitoolkit.io?utm_source=apitoolkit_github_dotnetsdk" target="_blank" rel="noopener noreferrer"><img src="https://github.com/apitoolkit/.github/blob/main/images/icon.png?raw=true" width="40" /></a>
+<a href="https://apitoolkit.io?utm_source=github-sdks" target="_blank" rel="noopener noreferrer"><img src="https://github.com/apitoolkit/.github/blob/main/images/icon.png?raw=true" width="40" /></a>
 
 </div>

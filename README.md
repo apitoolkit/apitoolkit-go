@@ -75,7 +75,7 @@ func main() {
 
 > [!NOTE]
 > 
-> - This SDK supports multiple Golang frameworks (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdk), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdk), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdk), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdk)). You can learn how to configure each framework using the provided Middleware (e.g.,  `EchoMiddleware`) in the linked docs above.
+> - This SDK supports multiple Golang frameworks (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdk), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdk), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdk), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdk)). You can learn how to configure each framework using the provided Middleware (e.g.,  `EchoMiddleware`) in the respective linked docs above.
 > - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_source=github-sdk) generated from the APItoolkit dashboard.
 
 <br />

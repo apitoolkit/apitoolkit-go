@@ -51,7 +51,6 @@ import (
   "context"
   "log"
   "net/http"
-  "github.com/labstack/echo/v4"
   apitoolkit "github.com/apitoolkit/apitoolkit-go"
 )
 
@@ -64,25 +63,19 @@ func main() {
     panic(err)
   }
 
-  router := echo.New()
-
   // Register APItoolkit's middleware
-  router.Use(apitoolkitClient.EchoMiddleware)
+  http.Handle("/", apitoolkitClient.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("Hello, World!"))
+  })))
 
-  // router.Use(...)
-  // Other middleware
-
-  router.POST("/:slug/test", func(c echo.Context) error {
-    return c.String(http.StatusOK, "Ok, success!")
-  })
-
-  router.Start(":8080")
+  http.ListenAndServe(":8080", nil)
 }
 ```
 
 > [!NOTE]
 > 
-> - This SDK supports multiple Golang frameworks (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdk), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdk), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdk), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdk)). You can learn how to configure each Middleware in the linked docs for each framework above.
+> - This SDK supports multiple Golang frameworks (including, [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_source=github-sdk), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_source=github-sdk), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_source=github-sdk), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_source=github-sdk)). You can learn how to configure each framework using the provided Middleware (e.g.,  `EchoMiddleware`) in the linked docs above.
 > - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_source=github-sdk) generated from the APItoolkit dashboard.
 
 <br />

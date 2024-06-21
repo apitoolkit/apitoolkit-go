@@ -103,10 +103,12 @@ func HTTPClient(ctx context.Context, opts ...RoundTripperOption) *http.Client {
 		opt(cfg)
 	}
 
-	httpClient := http.DefaultClient
+	httpClientV := *http.DefaultClient
+	httpClient := &httpClientV
 	if cfg.HTTPClient != nil {
 		// Use httpClient supplied by user.
-		httpClient = cfg.HTTPClient
+		v := *cfg.HTTPClient
+		httpClient = &v
 	}
 
 	httpClient.Transport = client.WrapRoundTripper(

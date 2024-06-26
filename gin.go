@@ -58,7 +58,7 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 				err = errors.New(err.(string))
 			}
 			ReportError(ctx.Request.Context(), err.(error))
-			payload := c.buildPayload(GoGinSDKType, start,
+			payload := c.BuildPayload(GoGinSDKType, start,
 				ctx.Request, 500,
 				reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(),
 				pathParams, ctx.FullPath(),
@@ -74,7 +74,7 @@ func (c *Client) GinMiddleware(ctx *gin.Context) {
 
 	ctx.Next()
 
-	payload := c.buildPayload(GoGinSDKType, start,
+	payload := c.BuildPayload(GoGinSDKType, start,
 		ctx.Request, ctx.Writer.Status(),
 		reqByteBody, blw.body.Bytes(), ctx.Writer.Header().Clone(),
 		pathParams, ctx.FullPath(),

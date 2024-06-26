@@ -197,7 +197,7 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	return err
 }
 
-func (c *Client) buildPayload(SDKType string, trackingStart time.Time, req *http.Request,
+func (c *Client) BuildPayload(SDKType string, trackingStart time.Time, req *http.Request,
 	statusCode int, reqBody []byte, respBody []byte, respHeader map[string][]string,
 	pathParams map[string]string, urlPath string,
 	redactHeadersList,

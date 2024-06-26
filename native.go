@@ -44,7 +44,7 @@ func (c *Client) Middleware(next http.Handler) http.Handler {
 		res.WriteHeader(recRes.StatusCode)
 		res.Write(resBody)
 
-		payload := c.buildPayload(GoDefaultSDKType, start,
+		payload := c.BuildPayload(GoDefaultSDKType, start,
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, nil, req.URL.Path,
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
@@ -90,7 +90,7 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 		pathTmpl, _ := route.GetPathTemplate()
 		vars := mux.Vars(req)
 
-		payload := c.buildPayload(GoGorillaMux, start,
+		payload := c.BuildPayload(GoGorillaMux, start,
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, vars, pathTmpl,
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
@@ -144,7 +144,7 @@ func (c *Client) ChiMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		payload := c.buildPayload(GoGorillaMux, start,
+		payload := c.BuildPayload(GoGorillaMux, start,
 			req, recRes.StatusCode,
 			reqBuf, resBody, recRes.Header, vars, chiCtx.RoutePattern(),
 			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,

@@ -77,7 +77,7 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 					err = errors.New(err.(string))
 				}
 				ReportError(ctx.Request().Context(), err.(error))
-				payload := c.buildPayload(GoDefaultSDKType, startTime,
+				payload := c.BuildPayload(GoDefaultSDKType, startTime,
 					ctx.Request(), 500,
 					reqBuf, resBody.Bytes(), ctx.Response().Header().Clone(),
 					pathParams, ctx.Path(),
@@ -95,7 +95,7 @@ func (c *Client) EchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		err = next(ctx)
 
 		// proceed post-response processing
-		payload := c.buildPayload(GoDefaultSDKType, startTime,
+		payload := c.BuildPayload(GoDefaultSDKType, startTime,
 			ctx.Request(), ctx.Response().Status,
 			reqBuf, resBody.Bytes(), ctx.Response().Header().Clone(),
 			pathParams, ctx.Path(),

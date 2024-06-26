@@ -57,7 +57,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 	if res != nil {
 		respBodyBytes, _ := io.ReadAll(res.Body)
 		res.Body = io.NopCloser(bytes.NewBuffer(respBodyBytes))
-		payload = rt.client.buildPayload(
+		payload = rt.client.BuildPayload(
 			GoOutgoing,
 			start, req, res.StatusCode, reqBodyBytes,
 			respBodyBytes, res.Header, nil,
@@ -68,7 +68,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 			parentMsgIDPtr,
 		)
 	} else {
-		payload = rt.client.buildPayload(
+		payload = rt.client.BuildPayload(
 			GoOutgoing,
 			start, req, 503, reqBodyBytes,
 			nil, nil, nil,

@@ -13,49 +13,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Middleware collects request, response parameters and publishes the payload
-func (c *Client) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		msgID := uuid.Must(uuid.NewRandom())
-		newCtx := context.WithValue(req.Context(), CurrentRequestMessageID, msgID)
-
-		errorList := []ATError{}
-		newCtx = context.WithValue(newCtx, ErrorListCtxKey, &errorList)
-		newCtx = context.WithValue(newCtx, CurrentClient, c)
-		req = req.WithContext(newCtx)
-
-		reqBuf, _ := io.ReadAll(req.Body)
-		req.Body.Close()
-		req.Body = io.NopCloser(bytes.NewBuffer(reqBuf))
-
-		rec := httptest.NewRecorder()
-		start := time.Now()
-		next.ServeHTTP(rec, req)
-
-		recRes := rec.Result()
-		// io.Copy(res, recRes.Body)
-		for k, v := range recRes.Header {
-			for _, vv := range v {
-				res.Header().Add(k, vv)
-			}
-		}
-		resBody, _ := io.ReadAll(recRes.Body)
-		res.WriteHeader(recRes.StatusCode)
-		res.Write(resBody)
-
-		payload := c.BuildPayload(GoDefaultSDKType, start,
-			req, recRes.StatusCode,
-			reqBuf, resBody, recRes.Header, nil, req.URL.Path,
-			c.config.RedactHeaders, c.config.RedactRequestBody, c.config.RedactResponseBody,
-			errorList,
-			msgID,
-			nil,
-		)
-
-		c.PublishMessage(req.Context(), payload)
-	})
-}
-
 // GorillaMuxMiddleware is for the gorilla mux routing library and collects request, response parameters and publishes the payload
 func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
@@ -106,5 +63,3 @@ func (c *Client) GorillaMuxMiddleware(next http.Handler) http.Handler {
 		}
 	})
 }
-
-// ChiMiddleware is for the Golang Chi router and collects request, response parameters and publishes the payload

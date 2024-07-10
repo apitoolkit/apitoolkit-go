@@ -20,7 +20,7 @@ func TestNativeGoMiddleware(t *testing.T) {
 	client := &Client{
 		config: &Config{
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
+			RedactResponseBody: ExampleDataRedaction,
 		},
 	}
 	var publishCalled bool
@@ -49,8 +49,8 @@ func TestNativeGoMiddleware(t *testing.T) {
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
 		assert.Equal(t, GoDefaultSDKType, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+		reqData, _ := json.Marshal(ExampleData2)
+		respData, _ := json.Marshal(ExampleDataRedacted)
 
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
@@ -64,7 +64,7 @@ func TestNativeGoMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 
-		jsonByte, err := json.Marshal(exampleData)
+		jsonByte, err := json.Marshal(ExampleData)
 		assert.NoError(t, err)
 
 		w.Header().Add("Content-Type", "application/json")
@@ -82,7 +82,7 @@ func TestNativeGoMiddleware(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
@@ -94,7 +94,7 @@ func TestGorillaGoMiddleware(t *testing.T) {
 			Debug:              true,
 			VerboseDebug:       true,
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
+			RedactResponseBody: ExampleDataRedaction,
 		},
 	}
 	var publishCalled bool
@@ -123,8 +123,8 @@ func TestGorillaGoMiddleware(t *testing.T) {
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
 		assert.Equal(t, GoGorillaMux, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+		reqData, _ := json.Marshal(ExampleData2)
+		respData, _ := json.Marshal(ExampleDataRedacted)
 
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
@@ -138,7 +138,7 @@ func TestGorillaGoMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 
-		jsonByte, err := json.Marshal(exampleData)
+		jsonByte, err := json.Marshal(ExampleData)
 		assert.NoError(t, err)
 
 		w.Header().Add("Content-Type", "application/json")
@@ -160,7 +160,7 @@ func TestGorillaGoMiddleware(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
@@ -172,7 +172,7 @@ func TestOutgoingRequestGorilla(t *testing.T) {
 			Debug:              true,
 			VerboseDebug:       true,
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
+			RedactResponseBody: ExampleDataRedaction,
 		},
 	}
 	var publishCalled bool
@@ -211,7 +211,7 @@ func TestOutgoingRequestGorilla(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
@@ -223,7 +223,7 @@ func TestChiMiddleware(t *testing.T) {
 			Debug:              true,
 			VerboseDebug:       true,
 			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
+			RedactResponseBody: ExampleDataRedaction,
 		},
 	}
 	var publishCalled bool
@@ -252,8 +252,8 @@ func TestChiMiddleware(t *testing.T) {
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
 		assert.Equal(t, GoGorillaMux, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+		reqData, _ := json.Marshal(ExampleData2)
+		respData, _ := json.Marshal(ExampleDataRedacted)
 
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
@@ -267,7 +267,7 @@ func TestChiMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
 
-		jsonByte, err := json.Marshal(exampleData)
+		jsonByte, err := json.Marshal(ExampleData)
 		assert.NoError(t, err)
 
 		w.Header().Add("Content-Type", "application/json")
@@ -289,7 +289,7 @@ func TestChiMiddleware(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)

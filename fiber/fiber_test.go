@@ -1,4 +1,4 @@
-package apitoolkit
+package apitoolkitfiber
 
 import (
 	"bytes"
@@ -10,20 +10,20 @@ import (
 	"testing"
 	"time"
 
+	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFiberMiddleware(t *testing.T) {
-	client := &Client{
-		config: &Config{
-			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
-		},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{
+		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
+		RedactResponseBody: apt.ExampleDataRedaction,
+	})
 	var publishCalled bool
 
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		assert.Equal(t, "POST", payload.Method)
 		assert.Equal(t, "/:slug/test", payload.URLPath)
 		assert.Equal(t, map[string]string{
@@ -46,10 +46,10 @@ func TestFiberMiddleware(t *testing.T) {
 		assert.Equal(t, "/slug-value/test?param1=abc&param2=123", payload.RawURL)
 		assert.Equal(t, http.StatusAccepted, payload.StatusCode)
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
-		assert.Equal(t, GoFiberSDKType, payload.SdkType)
+		assert.Equal(t, apt.GoFiberSDKType, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+		reqData, _ := json.Marshal(apt.ExampleData2)
+		respData, _ := json.Marshal(apt.ExampleDataRedacted)
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
 
@@ -58,33 +58,33 @@ func TestFiberMiddleware(t *testing.T) {
 	}
 
 	router := fiber.New()
-	router.Use(client.FiberMiddleware)
+	router.Use(FiberMiddleware(client))
 	router.Post("/:slug/test", func(c *fiber.Ctx) error {
 		body := c.Request().Body()
 		assert.NotEmpty(t, body)
-		reqData, _ := json.Marshal(exampleData2)
+		reqData, _ := json.Marshal(apt.ExampleData2)
 		assert.Equal(t, reqData, body)
 
 		c.Set("Content-Type", "application/json")
 		c.Set("X-API-KEY", "applicationKey")
 
-		return c.Status(http.StatusAccepted).JSON(exampleData)
+		return c.Status(http.StatusAccepted).JSON(apt.ExampleData)
 	})
 
 	// ts := httptest.NewServer(router.Server())
 	// defer ts.Close()
 
-	respData, _ := json.Marshal(exampleData)
+	respData, _ := json.Marshal(apt.ExampleData)
 	// resp, err := req.Post(ts.URL+"/slug-value/test",
 	// 	req.Param{"param1": "abc", "param2": 123},
 	// 	req.Header{
 	// 		"Content-Type": "application/json",
 	// 		"X-API-KEY":    "past-3",
 	// 	},
-	// 	req.BodyJSON(exampleData2),
+	// 	req.BodyJSON(apt.ExampleData2),
 	// )
 
-	reqData, _ := json.Marshal(exampleData2)
+	reqData, _ := json.Marshal(apt.ExampleData2)
 	req := httptest.NewRequest("POST", "/slug-value/test?param1=abc&param2=123", bytes.NewReader(reqData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-API-KEY", "past-3")
@@ -97,12 +97,11 @@ func TestFiberMiddleware(t *testing.T) {
 }
 
 func TestOutgoingRequestFiber(t *testing.T) {
-	client := &Client{
-		config: &Config{},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{})
 	publishCalled := false
 	var parentId *string
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		if payload.RawURL == "/from-gorilla" {
 			assert.NotNil(t, payload.ParentID)
 			parentId = payload.ParentID
@@ -113,11 +112,11 @@ func TestOutgoingRequestFiber(t *testing.T) {
 		return nil
 	}
 	router := fiber.New()
-	router.Use(client.FiberMiddleware)
+	router.Use(FiberMiddleware(client))
 	router.Post("/:slug/test", func(c *fiber.Ctx) error {
 		body := c.Request().Body()
 		assert.NotEmpty(t, body)
-		reqData, _ := json.Marshal(exampleData2)
+		reqData, _ := json.Marshal(apt.ExampleData2)
 		assert.Equal(t, reqData, body)
 		HTTPClient := http.DefaultClient
 		HTTPClient.Transport = client.WrapRoundTripper(
@@ -128,10 +127,10 @@ func TestOutgoingRequestFiber(t *testing.T) {
 		c.Append("Content-Type", "application/json")
 		c.Append("X-API-KEY", "applicationKey")
 
-		return c.Status(http.StatusAccepted).JSON(exampleData)
+		return c.Status(http.StatusAccepted).JSON(apt.ExampleData)
 	})
 
-	reqData, _ := json.Marshal(exampleData2)
+	reqData, _ := json.Marshal(apt.ExampleData2)
 	ts := httptest.NewRequest("POST", "/slug-value/test?param1=abc&param2=123", bytes.NewReader(reqData))
 	ts.Header.Set("Content-Type", "application/json")
 	ts.Header.Set("X-API-KEY", "past-3")
@@ -140,34 +139,3 @@ func TestOutgoingRequestFiber(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
 }
-
-// func TestFiberMiddlewareGET(t *testing.T) {
-// 	client := &Client{
-// 		config: &Config{},
-// 	}
-// 	var publishCalled bool
-// 	respData, _ := json.Marshal(exampleData)
-
-// 	client.PublishMessage = func(ctx context.Context, payload Payload) error {
-// 		// ... rest of the assertions remain same as in Gin test
-// 		publishCalled = true
-// 		return nil
-// 	}
-
-// 	app := fiber.New()
-// 	app.Use(client.FiberMiddleware)
-// 	app.Get("/:slug/test", func(ctx *fiber.Ctx) error {
-// 		body := ctx.Body()
-// 		assert.Empty(t, body)
-// 		ctx.Set("Content-Type", "application/json")
-// 		return ctx.Status(http.StatusAccepted).JSON(exampleData)
-// 	})
-
-// 	ts := httptest.NewRequest("GET", "/slug-value/test", nil)
-// 	ts.Header.Set("X-API-KEY", "past-3")
-
-// 	resp, err := app.Test(ts)
-// 	assert.NoError(t, err)
-// 	assert.True(t, publishCalled)
-// 	assert.Equal(t, respData, utils.GetBody(resp))
-// }

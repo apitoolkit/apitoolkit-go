@@ -18,7 +18,7 @@ func TestReporting(t *testing.T) {
 		APIKey:             os.Getenv("APITOOLKIT_KEY"),
 		RootURL:            "",
 		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-		RedactResponseBody: exampleDataRedaction,
+		RedactResponseBody: ExampleDataRedaction,
 		Tags:               []string{"staging"},
 	}
 	client, err := NewClient(ctx, cfg)
@@ -51,7 +51,7 @@ func TestReporting(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(ExampleData2),
 	)
 
 	assert.NoError(t, err)
@@ -63,7 +63,7 @@ func TestSugaredReporting(t *testing.T) {
 		APIKey:             os.Getenv("APITOOLKIT_KEY"),
 		RootURL:            "",
 		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-		RedactResponseBody: exampleDataRedaction,
+		RedactResponseBody: ExampleDataRedaction,
 		Tags:               []string{"staging"},
 	}
 	client, err := NewClient(ctx, cfg)
@@ -91,7 +91,7 @@ func TestSugaredReporting(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(ExampleData2),
 	)
 
 	assert.NoError(t, err)

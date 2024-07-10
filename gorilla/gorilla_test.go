@@ -74,7 +74,7 @@ func TestGorillaGoMiddleware(t *testing.T) {
 	}
 
 	r := mux.NewRouter()
-	r.Use(client.GorillaMuxMiddleware)
+	r.Use(GorillaMuxMiddleware(client))
 	r.HandleFunc("/{param1:[a-z]+}/test", handlerFn).Methods(http.MethodPost)
 
 	ts := httptest.NewServer(r)
@@ -124,7 +124,7 @@ func TestOutgoingRequestGorilla(t *testing.T) {
 		w.Write([]byte("Hello world"))
 	}
 	r := mux.NewRouter()
-	r.Use(client.GorillaMuxMiddleware)
+	r.Use(GorillaMuxMiddleware(client))
 	r.HandleFunc("/{param1:[a-z]+}/test", handlerFn).Methods(http.MethodPost)
 
 	ts := httptest.NewServer(r)

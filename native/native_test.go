@@ -320,3 +320,41 @@ func TestErrorReporting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
 }
+
+func TestReportingInteg(t *testing.T) {
+	ctx := context.Background()
+	cfg := apt.Config{
+		APIKey:             os.Getenv("APITOOLKIT_KEY"),
+		RootURL:            "",
+		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
+		RedactResponseBody: apt.ExampleDataRedaction,
+		Tags:               []string{"staging"},
+	}
+	client, err := NewClient(ctx, cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+	assert.NoError(t, err)
+
+	handlerFn := func(w http.ResponseWriter, r *http.Request) {
+		err1 := errors.Newf("Example Error %v", "value")
+		w.WriteHeader(http.StatusAccepted)
+		w.Write([]byte(`{"key":"value"}`))
+		err2 := errors.Wrap(err1, "wrapper from err2")
+		ReportError(r.Context(), err2)
+	}
+	ts := httptest.NewServer(Middleware(client)(http.HandlerFunc(handlerFn)))
+	defer ts.Close()
+
+	_, err = req.Post(ts.URL+"/test",
+		req.Param{"param1": "abc", "param2": 123},
+		req.Header{
+			"Content-Type": "application/json",
+			"X-API-KEY":    "past-3",
+		},
+		req.BodyJSON(apt.ExampleData2),
+	)
+
+	assert.NoError(t, err)
+}

@@ -43,7 +43,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (res *http.Response, err er
 	var errorList []ATError
 	if err != nil {
 		// Add the error for the given request payload
-		errorList = append(errorList, buildError(err))
+		errorList = append(errorList, BuildError(err))
 	}
 
 	var payload Payload

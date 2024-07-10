@@ -42,10 +42,10 @@ func ReportError(ctx context.Context, err error) {
 		return
 	}
 
-	*errorList = append(*errorList, buildError(err))
+	*errorList = append(*errorList, BuildError(err))
 }
 
-func buildError(err error) ATError {
+func BuildError(err error) ATError {
 	errType := reflect.TypeOf(err).String()
 
 	rootError := rootCause(err)

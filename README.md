@@ -27,16 +27,16 @@ APItoolkit is an end-to-end API and web services management toolkit for engineer
 Kindly run the command below to install the SDK:
 
 ```sh
-go get github.com/apitoolkit/apitoolkit-go
+go get github.com/apitoolkit/apitoolkit-go/gin
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go` to the list of dependencies like so:
+Then add `github.com/apitoolkit/apitoolkit-go/gin` to the list of dependencies like so:
 
 ```go
 package main
 
 import (
-  apitoolkit "github.com/apitoolkit/apitoolkit-go"
+  apitoolkit "github.com/apitoolkit/apitoolkit-go/gin"
 )
 ```
 
@@ -51,42 +51,47 @@ import (
   "context"
   "log"
   "net/http"
-  apitoolkit "github.com/apitoolkit/apitoolkit-go"
+  "github.com/gin-gonic/gin"
+  apitoolkit "github.com/apitoolkit/apitoolkit-go/gin"
 )
 
 func main() {
   ctx := context.Background()
 
+	router := gin.New()
   // Initialize the client
   apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "{ENTER_YOUR_API_KEY_HERE}"})
   if err != nil {
     panic(err)
   }
 
-  // Register APItoolkit's middleware
-  http.Handle("/", apitoolkitClient.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    w.WriteHeader(http.StatusOK)
-    w.Write([]byte("Hello, World!"))
-  })))
+  // Register APItoolkit's Gin middleware
+	router.Use(apitoolkit.GinMiddleware(apitoolkitClient))
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello World",
+		})
+	})
 
-  http.ListenAndServe(":8080", nil)
+	router.Run(":8080")
 }
 ```
 
 > [!NOTE]
-> 
-> - This SDK supports multiple Golang frameworks (including, [Chi](https://apitoolkit.io/docs/sdks/golang/chi?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Fiber](https://apitoolkit.io/docs/sdks/golang/fiber?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme)). You can learn how to configure each framework using the provided Middleware (e.g.,  `EchoMiddleware`) in the respective linked docs above.
+>
+> - We also support other Golang web frameworks (including, [Chi](https://apitoolkit.io/docs/sdks/golang/chi?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Fiber](https://apitoolkit.io/docs/sdks/golang/fiber?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme)).
 > - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) generated from the APItoolkit dashboard.
 
 <br />
 
 > [!IMPORTANT]
-> 
+>
 > To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme).
 
 ## Contributing and Help
 
 To contribute to the development of this SDK or request help from the community and our team, kindly do any of the following:
+
 - Read our [Contributors Guide](https://github.com/apitoolkit/.github/blob/main/CONTRIBUTING.md).
 - Join our community [Discord Server](https://apitoolkit.io/discord?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme).
 - Create a [new issue](https://github.com/apitoolkit/apitoolkit-go/issues/new/choose) in this repository.

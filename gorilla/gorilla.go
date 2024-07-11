@@ -14,8 +14,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewClient(ctx context.Context, conf apt.Config) (*apt.Client, error) {
-	return apt.NewClient(ctx, conf)
+type Config struct {
+	Debug              bool
+	VerboseDebug       bool
+	RootURL            string
+	APIKey             string
+	ProjectID          string
+	ServiceVersion     string
+	RedactHeaders      []string
+	RedactRequestBody  []string
+	RedactResponseBody []string
+	Tags               []string `json:"tags"`
+}
+
+func NewClient(ctx context.Context, conf Config) (*apt.Client, error) {
+	config := apt.Config{
+		Debug:              conf.Debug,
+		VerboseDebug:       conf.VerboseDebug,
+		RootURL:            conf.RootURL,
+		APIKey:             conf.APIKey,
+		ProjectID:          conf.ProjectID,
+		ServiceVersion:     conf.ServiceVersion,
+		RedactHeaders:      conf.RedactHeaders,
+		RedactRequestBody:  conf.RedactRequestBody,
+		RedactResponseBody: conf.RedactResponseBody,
+		Tags:               conf.Tags,
+	}
+	return apt.NewClient(ctx, config)
 }
 
 func HTTPClient(ctx context.Context, opts ...apt.RoundTripperOption) *http.Client {

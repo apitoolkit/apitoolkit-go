@@ -90,7 +90,7 @@ func TestNativeGoMiddleware(t *testing.T) {
 
 func TestReporting(t *testing.T) {
 	ctx := context.Background()
-	cfg := apt.Config{
+	cfg := Config{
 		APIKey:             os.Getenv("APITOOLKIT_KEY"),
 		RootURL:            "",
 		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
@@ -135,7 +135,7 @@ func TestReporting(t *testing.T) {
 
 func TestSugaredReporting(t *testing.T) {
 	ctx := context.Background()
-	cfg := apt.Config{
+	cfg := Config{
 		APIKey:             os.Getenv("APITOOLKIT_KEY"),
 		RootURL:            "",
 		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
@@ -323,7 +323,7 @@ func TestErrorReporting(t *testing.T) {
 
 func TestReportingInteg(t *testing.T) {
 	ctx := context.Background()
-	cfg := apt.Config{
+	cfg := Config{
 		APIKey:             os.Getenv("APITOOLKIT_KEY"),
 		RootURL:            "",
 		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},

@@ -168,6 +168,18 @@ func (c *Client) Close() error {
 	return nil
 }
 
+func (c *Client) GetConfig() *Config {
+	return c.config
+}
+
+func (c *Client) SetConfig(cfg *Config) {
+	c.config = cfg
+}
+
+func (c *Client) GetMetadata() *ClientMetadata {
+	return c.metadata
+}
+
 // PublishMessage publishes payload to a gcp cloud console
 func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 	if c.goReqsTopic == nil {
@@ -187,13 +199,14 @@ func (c *Client) publishMessage(ctx context.Context, payload Payload) error {
 		PublishTime: time.Now(),
 	}
 
-	c.goReqsTopic.Publish(ctx, msgg)
+	res := c.goReqsTopic.Publish(ctx, msgg)
 	if c.config.Debug {
 		log.Println("APIToolkit: message published to pubsub topic")
 		if c.config.VerboseDebug {
 			log.Println("APIToolkit: ", pretty.Sprint(data))
 		}
 	}
+	_, err = res.Get(ctx)
 	return err
 }
 
@@ -245,10 +258,10 @@ func (c *Client) BuildPayload(SDKType string, trackingStart time.Time, req *http
 		QueryParams:     req.URL.Query(),
 		RawURL:          req.URL.RequestURI(),
 		Referer:         req.Referer(),
-		RequestBody:     redact(reqBody, redactRequestBodyList),
-		RequestHeaders:  redactHeaders(req.Header, redactedHeaders),
-		ResponseBody:    redact(respBody, redactResponseBodyList),
-		ResponseHeaders: redactHeaders(respHeader, redactedHeaders),
+		RequestBody:     RedactJSON(reqBody, redactRequestBodyList),
+		RequestHeaders:  RedactHeaders(req.Header, redactedHeaders),
+		ResponseBody:    RedactJSON(respBody, redactResponseBodyList),
+		ResponseHeaders: RedactHeaders(respHeader, redactedHeaders),
 		SdkType:         SDKType,
 		StatusCode:      statusCode,
 		Timestamp:       time.Now(),
@@ -261,7 +274,7 @@ func (c *Client) BuildPayload(SDKType string, trackingStart time.Time, req *http
 	}
 }
 
-func (c *Client) buildFastHTTPPayload(SDKType string, trackingStart time.Time, req *fasthttp.RequestCtx,
+func (c *Client) BuildFastHTTPPayload(SDKType string, trackingStart time.Time, req *fasthttp.RequestCtx,
 	statusCode int, reqBody []byte, respBody []byte, respHeader map[string][]string,
 	pathParams map[string]string, urlPath string,
 	redactHeadersList,
@@ -320,10 +333,10 @@ func (c *Client) buildFastHTTPPayload(SDKType string, trackingStart time.Time, r
 		QueryParams:     queryParams,
 		RawURL:          string(req.RequestURI()),
 		Referer:         referer,
-		RequestBody:     redact(reqBody, redactRequestBodyList),
-		RequestHeaders:  redactHeaders(reqHeaders, redactedHeaders),
-		ResponseBody:    redact(respBody, redactResponseBodyList),
-		ResponseHeaders: redactHeaders(respHeader, redactedHeaders),
+		RequestBody:     RedactJSON(reqBody, redactRequestBodyList),
+		RequestHeaders:  RedactHeaders(reqHeaders, redactedHeaders),
+		ResponseBody:    RedactJSON(respBody, redactResponseBodyList),
+		ResponseHeaders: RedactHeaders(respHeader, redactedHeaders),
 		SdkType:         SDKType,
 		StatusCode:      statusCode,
 		Timestamp:       time.Now(),
@@ -336,7 +349,11 @@ func (c *Client) buildFastHTTPPayload(SDKType string, trackingStart time.Time, r
 	}
 }
 
-func redact(data []byte, redactList []string) []byte {
+func (c *Client) ReportError(ctx context.Context, err error) {
+	ReportError(ctx, err)
+}
+
+func RedactJSON(data []byte, redactList []string) []byte {
 	config := jsonpath.Config{}
 	config.SetAccessorMode()
 
@@ -356,7 +373,7 @@ func redact(data []byte, redactList []string) []byte {
 	return dataJSON
 }
 
-func redactHeaders(headers map[string][]string, redactList []string) map[string][]string {
+func RedactHeaders(headers map[string][]string, redactList []string) map[string][]string {
 	for k := range headers {
 		if find(redactList, k) {
 			headers[k] = []string{"[CLIENT_REDACTED]"}

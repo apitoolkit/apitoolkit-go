@@ -1,4 +1,4 @@
-package apitoolkit
+package apitoolkitecho
 
 import (
 	"context"
@@ -9,21 +9,21 @@ import (
 	"testing"
 	"time"
 
+	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/imroc/req"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEchoServerMiddleware(t *testing.T) {
-	client := &Client{
-		config: &Config{
-			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
-		},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{
+		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
+		RedactResponseBody: apt.ExampleDataRedaction,
+	})
 	var publishCalled bool
 
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		assert.Equal(t, "POST", payload.Method)
 		assert.Equal(t, "/:slug/test", payload.URLPath)
 		assert.Equal(t, map[string]string{
@@ -48,10 +48,10 @@ func TestEchoServerMiddleware(t *testing.T) {
 		assert.Equal(t, "/slug-value/test?param1=abc&param2=123", payload.RawURL)
 		assert.Equal(t, http.StatusAccepted, payload.StatusCode)
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
-		assert.Equal(t, GoDefaultSDKType, payload.SdkType)
+		assert.Equal(t, apt.GoDefaultSDKType, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+		reqData, _ := json.Marshal(apt.ExampleData2)
+		respData, _ := json.Marshal(apt.ExampleDataRedacted)
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
 
@@ -60,30 +60,30 @@ func TestEchoServerMiddleware(t *testing.T) {
 	}
 
 	e := echo.New()
-	e.Use(client.EchoMiddleware)
+	e.Use(EchoMiddleware(client))
 	e.POST("/:slug/test", func(c echo.Context) (err error) {
 		body, err := io.ReadAll(c.Request().Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
-		reqData, _ := json.Marshal(exampleData2)
+		reqData, _ := json.Marshal(apt.ExampleData2)
 		assert.Equal(t, reqData, body)
 		c.Response().Header().Set("Content-Type", "application/json")
 		c.Response().Header().Set("X-API-KEY", "applicationKey")
-		c.JSON(http.StatusAccepted, exampleData)
+		c.JSON(http.StatusAccepted, apt.ExampleData)
 		return
 	})
 
 	ts := httptest.NewServer(e)
 	defer ts.Close()
 
-	respData, _ := json.Marshal(exampleData)
+	respData, _ := json.Marshal(apt.ExampleData)
 	resp, err := req.Post(ts.URL+"/slug-value/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(apt.ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
@@ -93,12 +93,11 @@ func TestEchoServerMiddleware(t *testing.T) {
 }
 
 func TestOutgoingRequestEcho(t *testing.T) {
-	client := &Client{
-		config: &Config{},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{})
 	publishCalled := false
 	var parentId *string
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		if payload.RawURL == "/from-gorilla" {
 			assert.NotNil(t, payload.ParentID)
 			parentId = payload.ParentID
@@ -109,19 +108,21 @@ func TestOutgoingRequestEcho(t *testing.T) {
 		return nil
 	}
 	router := echo.New()
-	router.Use(client.EchoMiddleware)
+	client.PublishMessage(context.Background(), apt.Payload{})
+	router.Use(EchoMiddleware(client))
 	router.POST("/:slug/test", func(c echo.Context) (err error) {
 		body, err := io.ReadAll(c.Request().Body)
 		assert.NotEmpty(t, body)
-		reqData, _ := json.Marshal(exampleData2)
+		reqData, _ := json.Marshal(apt.ExampleData2)
 		assert.Equal(t, reqData, body)
-		HTTPClient := http.DefaultClient
-		HTTPClient.Transport = client.WrapRoundTripper(
-			c.Request().Context(), HTTPClient.Transport,
+		hClient := HTTPClient(c.Request().Context(),
+			WithRedactHeaders("content-type", "Authorization", "HOST"),
+			WithRedactRequestBody("$.user.email", "$.user.addresses"),
+			WithRedactResponseBody("$.users[*].email", "$.users[*].credit_card"),
 		)
-		_, _ = HTTPClient.Get("http://localhost:3000/from-gorilla")
+		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
-		c.JSON(http.StatusAccepted, exampleData)
+		c.JSON(http.StatusAccepted, apt.ExampleData)
 		return
 	})
 	ts := httptest.NewServer(router)
@@ -133,7 +134,7 @@ func TestOutgoingRequestEcho(t *testing.T) {
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(apt.ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)

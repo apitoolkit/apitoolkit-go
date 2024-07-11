@@ -5,6 +5,8 @@ go 1.16
 require (
 	cloud.google.com/go/pubsub v1.33.0
 	github.com/AsaiYusuke/jsonpath v1.6.0
+	github.com/bogdanfinn/fhttp v0.5.28
+	github.com/bogdanfinn/tls-client v1.7.5
 	github.com/cockroachdb/errors v1.11.1
 	github.com/getsentry/sentry-go v0.20.0 // indirect
 	github.com/gin-gonic/gin v1.9.1

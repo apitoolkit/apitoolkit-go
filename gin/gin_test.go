@@ -1,14 +1,16 @@
-package apitoolkit
+package apitoolkitgin
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req"
 	"github.com/stretchr/testify/assert"
@@ -17,15 +19,15 @@ import (
 func TestGinMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	client := &Client{
-		config: &Config{
-			RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
-			RedactResponseBody: exampleDataRedaction,
-		},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{
+		RedactHeaders:      []string{"X-Api-Key", "Accept-Encoding"},
+		RedactResponseBody: apt.ExampleDataRedaction,
+	})
+
 	var publishCalled bool
 
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		assert.Equal(t, "POST", payload.Method)
 		assert.Equal(t, "/:slug/test", payload.URLPath)
 		assert.Equal(t, map[string]string{
@@ -50,10 +52,10 @@ func TestGinMiddleware(t *testing.T) {
 		assert.Equal(t, "/slug-value/test?param1=abc&param2=123", payload.RawURL)
 		assert.Equal(t, http.StatusAccepted, payload.StatusCode)
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
-		assert.Equal(t, GoGinSDKType, payload.SdkType)
+		assert.Equal(t, apt.GoGinSDKType, payload.SdkType)
 
-		reqData, _ := json.Marshal(exampleData2)
-		respData, _ := json.Marshal(exampleDataRedacted)
+		reqData, _ := json.Marshal(apt.ExampleData2)
+		respData, _ := json.Marshal(apt.ExampleDataRedacted)
 		assert.Equal(t, reqData, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
 
@@ -62,29 +64,29 @@ func TestGinMiddleware(t *testing.T) {
 	}
 
 	router := gin.New()
-	router.Use(client.GinMiddleware)
+	router.Use(GinMiddleware(client))
 	router.POST("/:slug/test", func(c *gin.Context) {
 		body, err := io.ReadAll(c.Request.Body)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, body)
-		reqData, _ := json.Marshal(exampleData2)
+		reqData, _ := json.Marshal(apt.ExampleData2)
 		assert.Equal(t, reqData, body)
 		c.Header("Content-Type", "application/json")
 		c.Header("X-API-KEY", "applicationKey")
-		c.JSON(http.StatusAccepted, exampleData)
+		c.JSON(http.StatusAccepted, apt.ExampleData)
 	})
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
-	respData, _ := json.Marshal(exampleData)
+	respData, _ := json.Marshal(apt.ExampleData)
 	resp, err := req.Post(ts.URL+"/slug-value/test",
 		req.Param{"param1": "abc", "param2": 123},
 		req.Header{
 			"Content-Type": "application/json",
 			"X-API-KEY":    "past-3",
 		},
-		req.BodyJSON(exampleData2),
+		req.BodyJSON(apt.ExampleData2),
 	)
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
@@ -93,12 +95,12 @@ func TestGinMiddleware(t *testing.T) {
 
 func TestGinMiddlewareGET(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	client := &Client{
-		config: &Config{},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{})
+
 	var publishCalled bool
-	respData, _ := json.Marshal(exampleData)
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	respData, _ := json.Marshal(apt.ExampleData)
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		assert.Equal(t, "GET", payload.Method)
 		assert.Equal(t, "/:slug/test", payload.URLPath)
 		assert.Equal(t, map[string]string{
@@ -121,12 +123,12 @@ func TestGinMiddlewareGET(t *testing.T) {
 		assert.Greater(t, payload.Duration, 1000*time.Nanosecond)
 		assert.Equal(t, []byte{0x6e, 0x75, 0x6c, 0x6c}, payload.RequestBody)
 		assert.Equal(t, respData, payload.ResponseBody)
-		assert.Equal(t, GoGinSDKType, payload.SdkType)
+		assert.Equal(t, apt.GoGinSDKType, payload.SdkType)
 		publishCalled = true
 		return nil
 	}
 	router := gin.New()
-	router.Use(client.GinMiddleware)
+	router.Use(GinMiddleware(client))
 
 	router.GET("/:slug/test", func(c *gin.Context) {
 		body, err := io.ReadAll(c.Request.Body)
@@ -134,7 +136,7 @@ func TestGinMiddlewareGET(t *testing.T) {
 		assert.Equal(t, []byte{}, body)
 
 		c.Header("Content-Type", "application/json")
-		c.JSON(http.StatusAccepted, exampleData)
+		c.JSON(http.StatusAccepted, apt.ExampleData)
 	})
 
 	ts := httptest.NewServer(router)
@@ -153,14 +155,14 @@ func TestGinMiddlewareGET(t *testing.T) {
 
 func TestOutgoingRequestGin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	client := &Client{
-		config: &Config{},
-	}
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{})
+
 	var publishCalled bool
 	router := gin.New()
-	router.Use(client.GinMiddleware)
+	router.Use(GinMiddleware(client))
 	var parentId *string
-	client.PublishMessage = func(ctx context.Context, payload Payload) error {
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
 		if payload.RawURL == "/from-gorilla" {
 			assert.NotNil(t, payload.ParentID)
 			parentId = payload.ParentID
@@ -171,7 +173,11 @@ func TestOutgoingRequestGin(t *testing.T) {
 		return nil
 	}
 	router.GET("/:slug/test", func(c *gin.Context) {
-		hClient := HTTPClient(c.Request.Context())
+		hClient := apt.HTTPClient(c.Request.Context(),
+			WithRedactHeaders("X-API-KEY"),
+			WithRedactRequestBody("$.password"),
+			WithRedactResponseBody("$.account_data.account_id"),
+		)
 		_, _ = hClient.Get("http://localhost:3000/from-gorilla")
 
 		c.JSON(http.StatusAccepted, gin.H{"hello": "world"})
@@ -183,4 +189,43 @@ func TestOutgoingRequestGin(t *testing.T) {
 	_, err := req.Get(ts.URL + "/slug-value/test")
 	assert.NoError(t, err)
 	assert.True(t, publishCalled)
+}
+
+func TestGinMiddlewareGETError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	client := &apt.Client{}
+	client.SetConfig(&apt.Config{})
+
+	var publishCalled bool
+	respData, _ := json.Marshal(apt.ExampleData)
+	client.PublishMessage = func(ctx context.Context, payload apt.Payload) error {
+		publishCalled = true
+		return nil
+	}
+	router := gin.New()
+	router.Use(GinMiddleware(client))
+
+	router.GET("/:slug/test", func(c *gin.Context) {
+		body, err := io.ReadAll(c.Request.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{}, body)
+
+		ReportError(c.Request.Context(), errors.New("Test Error"))
+
+		c.Header("Content-Type", "application/json")
+		c.JSON(http.StatusAccepted, apt.ExampleData)
+	})
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	resp, err := req.Get(ts.URL+"/slug-value/test",
+		req.QueryParam{"param1": "abc", "param2": 123},
+		req.Header{
+			"X-API-KEY": "past-3",
+		},
+	)
+	assert.NoError(t, err)
+	assert.True(t, publishCalled)
+	assert.Equal(t, respData, resp.Bytes())
 }

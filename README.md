@@ -30,7 +30,7 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/gin
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/gin` to the list of dependencies like so:
+Then, add `github.com/apitoolkit/apitoolkit-go/gin` to the list of dependencies like so:
 
 ```go
 package main
@@ -57,30 +57,31 @@ import (
 
 func main() {
   ctx := context.Background()
+  router := gin.New()
 
-	router := gin.New()
   // Initialize the client
   apitoolkitClient, err := apitoolkit.NewClient(ctx, apitoolkit.Config{APIKey: "{ENTER_YOUR_API_KEY_HERE}"})
+
   if err != nil {
     panic(err)
   }
 
   // Register APItoolkit's Gin middleware
-	router.Use(apitoolkit.GinMiddleware(apitoolkitClient))
-	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello World",
-		})
-	})
+  router.Use(apitoolkit.GinMiddleware(apitoolkitClient))
+  router.GET("/", func(c *gin.Context) {
+    c.JSON(200, gin.H{
+      "message": "Hello World",
+    })
+  })
 
-	router.Run(":8080")
+  router.Run(":8080")
 }
 ```
 
 > [!NOTE]
 >
-> - We also support other Golang web frameworks (including, [Chi](https://apitoolkit.io/docs/sdks/golang/chi?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Fiber](https://apitoolkit.io/docs/sdks/golang/fiber?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme)).
 > - The `{ENTER_YOUR_API_KEY_HERE}` demo string should be replaced with the [API key](https://apitoolkit.io/docs/dashboard/settings-pages/api-keys?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) generated from the APItoolkit dashboard.
+> - This SDK supports other Golang web frameworks (including, [Chi](https://apitoolkit.io/docs/sdks/golang/chi?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Echo](https://apitoolkit.io/docs/sdks/golang/echo?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Fiber](https://apitoolkit.io/docs/sdks/golang/fiber?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gin](https://apitoolkit.io/docs/sdks/golang/gin?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), [Gorilla Mux](https://apitoolkit.io/docs/sdks/golang/gorillamux?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme), and [Native](https://apitoolkit.io/docs/sdks/golang/native?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme)). You can learn how to configure each framework in their respective documentation (linked above).
 
 <br />
 

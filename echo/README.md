@@ -68,7 +68,7 @@ func main() {
 
 > [!IMPORTANT]
 >
-> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme).
+> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang/echo?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme).
 
 ## Contributing and Help
 

@@ -5,7 +5,7 @@
 
 ## Golang Fiber SDK
 
-[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://apitoolkit.io/discord?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go/main/tree/echo)
+[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://apitoolkit.io/discord?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go/echo)
 
 APItoolkit is an end-to-end API and web services management toolkit for engineers and customer support teams. To integrate your Golang application with APItoolkit, you need to use this SDK to monitor incoming traffic, aggregate the requests, and then deliver them to the APItoolkit's servers.
 
@@ -16,7 +16,6 @@ APItoolkit is an end-to-end API and web services management toolkit for engineer
 ## Table of Contents
 
 - [Installation](#installation)
-- [Configuration](#configuration)
 - [Contributing and Help](#contributing-and-help)
 - [License](#license)
 
@@ -30,7 +29,7 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/fiber
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/fiber` to the list of dependencies like so:
+Then add `github.com/apitoolkit/apitoolkit-go/fiber` to the list of dependencies, like so:
 
 ```go
 package main
@@ -85,7 +84,7 @@ To contribute to the development of this SDK or request help from the community 
 
 ## License
 
-This repository is published under the [MIT](LICENSE) license.
+This repository is published under the [MIT](../LICENSE) license.
 
 ---
 

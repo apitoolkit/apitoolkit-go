@@ -16,6 +16,7 @@ APItoolkit is an end-to-end API and web services management toolkit for engineer
 ## Table of Contents
 
 - [Installation](#installation)
+- [Configuration](#configuration)
 - [Contributing and Help](#contributing-and-help)
 - [License](#license)
 
@@ -29,7 +30,20 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/chi
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/chi` to the list of dependencies, like so:
+Then add `github.com/apitoolkit/apitoolkit-go/chi` to the list of dependencies like so:
+
+```go
+package main
+
+import (
+  apitoolkit "github.com/apitoolkit/apitoolkit-go/chi"
+)
+```
+
+## Configuration
+
+Next, initialize APItoolkit in your application's entry point (e.g., `main.go`) like so:
+
 
 ```go
 package main

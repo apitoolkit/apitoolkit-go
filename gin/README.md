@@ -30,7 +30,7 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/gin
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/gin` to the list of dependencies like so:
+Then add `github.com/apitoolkit/apitoolkit-go/gin` to the list of dependencies, like so:
 
 ```go
 package main

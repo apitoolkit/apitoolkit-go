@@ -5,9 +5,9 @@
 
 ## Golang TLS Client SDK
 
-[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://apitoolkit.io/discord?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go/main/tree/native)
+[![APItoolkit SDK](https://img.shields.io/badge/APItoolkit-SDK-0068ff?logo=go)](https://github.com/topics/apitoolkit-sdk) [![Join Discord Server](https://img.shields.io/badge/Chat-Discord-7289da)](https://apitoolkit.io/discord?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![APItoolkit Docs](https://img.shields.io/badge/Read-Docs-0068ff)](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme) [![GoDoc](https://godoc.org/github.com/apitoolkit/apitoolkit-go?status.svg)](https://godoc.org/github.com/apitoolkit/apitoolkit-go/tls_client)
 
-If you are using a TLS client for your HTTP requests, you will need to use the apitoolkit-go/tls_client package to monitor those requests. To use the package, you must first install it using the command below:
+APItoolkit is an end-to-end API and web services management toolkit for engineers and customer support teams. If you are using a TLS client for your HTTP requests, you will need to use the `apitoolkit-go/tls_client` package to monitor those requests, aggregate the requests, and then deliver them to the APItoolkit's servers.
 
 </div>
 
@@ -30,7 +30,19 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/tls_client
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/tls_client` to the list of dependencies like so:
+Then add `github.com/apitoolkit/apitoolkit-go/tls_client` to the list of dependencies, like so:
+
+```go
+package main
+
+import (
+  apitoolkit "github.com/apitoolkit/apitoolkit-go/tls_client"
+)
+```
+
+## Configuration
+
+Next, initialize APItoolkit in your application's entry point (e.g., `main.go`) like so:
 
 ```go
 package main
@@ -96,7 +108,7 @@ func main() {
 
 > [!IMPORTANT]
 >
-> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang/tls_client?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme).
+> To learn more configuration options (redacting fields, error reporting, outgoing requests, etc.), please read this [SDK documentation](https://apitoolkit.io/docs/sdks/golang?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme).
 
 ## Contributing and Help
 
@@ -108,7 +120,7 @@ To contribute to the development of this SDK or request help from the community 
 
 ## License
 
-This repository is published under the [MIT](LICENSE) license.
+This repository is published under the [MIT](../LICENSE) license.
 
 ---
 

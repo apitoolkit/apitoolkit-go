@@ -29,7 +29,7 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/chi
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/chi` to the list of dependencies like so:
+Then add `github.com/apitoolkit/apitoolkit-go/chi` to the list of dependencies, like so:
 
 ```go
 package main

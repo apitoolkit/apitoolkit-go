@@ -7,8 +7,6 @@ import (
 	apt "github.com/apitoolkit/apitoolkit-go"
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 type Config struct {
@@ -21,7 +19,6 @@ type Config struct {
 	Tags                []string
 	CaptureRequestBody  bool
 	CaptureResponseBody bool
-	Tracer              trace.Tracer
 }
 
 func getAptConfig(config Config) apt.Config {
@@ -35,7 +32,6 @@ func getAptConfig(config Config) apt.Config {
 		RedactHeaders:       config.RedactHeaders,
 		RedactRequestBody:   config.RedactRequestBody,
 		RedactResponseBody:  config.RedactResponseBody,
-		Tracer:              config.Tracer,
 	}
 }
 
@@ -43,16 +39,12 @@ func Middleware(config Config) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		// Register the client in the context,
 		// so it can be used for outgoing requests with little ceremony
-		_, span := config.Tracer.Start(ctx.Context(), string(apt.SpanName))
-		ctx.Locals(string(apt.CurrentSpan), span)
 
 		msgID := uuid.Must(uuid.NewRandom())
 		ctx.Locals(string(apt.CurrentRequestMessageID), msgID)
 		errorList := []apt.ATError{}
 		ctx.Locals(string(apt.ErrorListCtxKey), &errorList)
-		ctx.Locals(apt.CurrentSpan, span)
 		newCtx := context.WithValue(ctx.Context(), apt.ErrorListCtxKey, &errorList)
-		newCtx = context.WithValue(newCtx, apt.CurrentSpan, span)
 		newCtx = context.WithValue(newCtx, apt.CurrentRequestMessageID, msgID)
 		ctx.SetUserContext(newCtx)
 		respHeaders := map[string][]string{}
@@ -77,7 +69,7 @@ func Middleware(config Config) fiber.Handler {
 					string(ctx.Context().Referer()),
 					aptConfig,
 				)
-				apt.CreateSpan(payload, aptConfig, span)
+				apt.CreateSpan(payload, aptConfig)
 				panic(err)
 			}
 		}()
@@ -95,7 +87,7 @@ func Middleware(config Config) fiber.Handler {
 			aptConfig,
 		)
 
-		apt.CreateSpan(payload, aptConfig, span)
+		apt.CreateSpan(payload, aptConfig)
 		return err
 	}
 }

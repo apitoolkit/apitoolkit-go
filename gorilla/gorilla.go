@@ -10,7 +10,6 @@ import (
 	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type Config struct {
@@ -23,7 +22,6 @@ type Config struct {
 	Tags                []string
 	CaptureRequestBody  bool
 	CaptureResponseBody bool
-	Tracer              trace.Tracer
 }
 
 func ReportError(ctx context.Context, err error) {
@@ -39,8 +37,6 @@ func Middleware(config Config) func(next http.Handler) http.Handler {
 
 			errorList := []apt.ATError{}
 			newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
-			_, span := config.Tracer.Start(newCtx, string(apt.SpanName))
-			newCtx = context.WithValue(newCtx, apt.CurrentSpan, span)
 			req = req.WithContext(newCtx)
 
 			reqBuf, _ := io.ReadAll(req.Body)
@@ -73,7 +69,6 @@ func Middleware(config Config) func(next http.Handler) http.Handler {
 				RedactHeaders:       config.RedactHeaders,
 				RedactRequestBody:   config.RedactRequestBody,
 				RedactResponseBody:  config.RedactResponseBody,
-				Tracer:              config.Tracer,
 			}
 
 			payload := apt.BuildPayload(apt.GoGorillaMux,
@@ -85,7 +80,7 @@ func Middleware(config Config) func(next http.Handler) http.Handler {
 				nil,
 				aptConfig,
 			)
-			apt.CreateSpan(payload, aptConfig, span)
+			apt.CreateSpan(payload, aptConfig)
 
 		})
 	}

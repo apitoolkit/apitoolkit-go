@@ -12,7 +12,6 @@ import (
 	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // bodyDumpResponseWriter use to preserve the http response body during request processing
@@ -47,7 +46,6 @@ type Config struct {
 	Tags                []string
 	CaptureRequestBody  bool
 	CaptureResponseBody bool
-	Tracer              trace.Tracer
 }
 
 func ReportError(ctx context.Context, err error) {
@@ -60,8 +58,6 @@ func Middleware(config Config) echo.MiddlewareFunc {
 		return func(ctx echo.Context) (err error) {
 			// Register the client in the context,
 			// so it can be used for outgoing requests with little ceremony
-			_, span := config.Tracer.Start(ctx.Request().Context(), string(apt.SpanName))
-			ctx.Set(string(apt.CurrentSpan), span)
 
 			msgID := uuid.Must(uuid.NewRandom())
 			ctx.Set(string(apt.CurrentRequestMessageID), msgID)
@@ -70,7 +66,6 @@ func Middleware(config Config) echo.MiddlewareFunc {
 			ctx.Set(string(apt.ErrorListCtxKey), &errorList)
 			newCtx := context.WithValue(ctx.Request().Context(), apt.ErrorListCtxKey, &errorList)
 			newCtx = context.WithValue(newCtx, apt.CurrentRequestMessageID, msgID)
-			newCtx = context.WithValue(newCtx, apt.CurrentSpan, span)
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 
 			var reqBuf []byte
@@ -97,7 +92,6 @@ func Middleware(config Config) echo.MiddlewareFunc {
 				RedactHeaders:       config.RedactHeaders,
 				RedactRequestBody:   config.RedactRequestBody,
 				RedactResponseBody:  config.RedactResponseBody,
-				Tracer:              config.Tracer,
 			}
 
 			defer func() {
@@ -116,7 +110,7 @@ func Middleware(config Config) echo.MiddlewareFunc {
 						nil,
 						aptConfig,
 					)
-					apt.CreateSpan(payload, aptConfig, span)
+					apt.CreateSpan(payload, aptConfig)
 					panic(err)
 				}
 			}()
@@ -135,7 +129,7 @@ func Middleware(config Config) echo.MiddlewareFunc {
 				nil,
 				aptConfig,
 			)
-			apt.CreateSpan(payload, aptConfig, span)
+			apt.CreateSpan(payload, aptConfig)
 			return err
 		}
 	}

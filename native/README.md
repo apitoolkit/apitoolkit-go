@@ -96,7 +96,6 @@ func main() {
 	})
 
 	nativeMiddleware := apitoolkitnative.Middleware(apitoolkitnative.Config{
-		Tracer:              tracer,
 		Debug:               true,
 		ServiceName:         "example-chi-server",
 		ServiceVersion:      "0.0.1",

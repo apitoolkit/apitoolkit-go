@@ -11,7 +11,6 @@ import (
 	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type Config struct {
@@ -24,7 +23,6 @@ type Config struct {
 	Tags                []string
 	CaptureRequestBody  bool
 	CaptureResponseBody bool
-	Tracer              trace.Tracer
 }
 
 func ReportError(ctx context.Context, err error) {
@@ -36,8 +34,6 @@ func Middleware(config Config) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 			msgID := uuid.Must(uuid.NewRandom())
 			newCtx := context.WithValue(req.Context(), apt.CurrentRequestMessageID, msgID)
-			_, span := config.Tracer.Start(newCtx, string(apt.SpanName))
-			newCtx = context.WithValue(newCtx, apt.CurrentSpan, span)
 
 			errorList := []apt.ATError{}
 			newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
@@ -69,7 +65,6 @@ func Middleware(config Config) func(http.Handler) http.Handler {
 				RedactHeaders:       config.RedactHeaders,
 				RedactRequestBody:   config.RedactRequestBody,
 				RedactResponseBody:  config.RedactResponseBody,
-				Tracer:              config.Tracer,
 			}
 
 			chiCtx := chi.RouteContext(req.Context())
@@ -93,7 +88,7 @@ func Middleware(config Config) func(http.Handler) http.Handler {
 				log.Println(payload)
 			}
 
-			apt.CreateSpan(payload, aptConfig, span)
+			apt.CreateSpan(payload, aptConfig)
 
 		})
 	}

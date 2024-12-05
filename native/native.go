@@ -7,10 +7,13 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+
+	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
 	apt "github.com/apitoolkit/apitoolkit-go"
-	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type Config struct {
@@ -39,7 +42,17 @@ func Middleware(config Config) func(http.Handler) http.Handler {
 
 			errorList := []apt.ATError{}
 			newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
-			_, span := config.Tracer.Start(newCtx, string(apt.SpanName))
+
+			if config.ServiceName == "" {
+				config.ServiceName = os.Getenv("OTEL_SERVICE_NAME")
+			}
+
+			tracer := config.Tracer 
+			if tracer == nil {
+				tracer = otel.GetTracerProvider().Tracer(config.ServiceName)
+			}
+
+			_, span := tracer.Start(newCtx, string(apt.SpanName))
 			newCtx = context.WithValue(newCtx, apt.CurrentSpan, span)
 			req = req.WithContext(newCtx)
 
@@ -71,7 +84,7 @@ func Middleware(config Config) func(http.Handler) http.Handler {
 				RedactHeaders:       config.RedactHeaders,
 				RedactRequestBody:   config.RedactRequestBody,
 				RedactResponseBody:  config.RedactResponseBody,
-				Tracer:              config.Tracer,
+				Tracer:              tracer,
 			}
 
 			payload := apt.BuildPayload(apt.GoDefaultSDKType,

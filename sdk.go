@@ -69,7 +69,7 @@ type Config struct {
 }
 
 func CreateSpan(payload Payload, config Config) {
-	tracer := otel.Tracer("example-gin-server")
+	tracer := otel.GetTracerProvider().Tracer(config.ServiceName)
 	_, span := tracer.Start(context.Background(), "apitoolkit-http-span")
 	defer span.End()
 

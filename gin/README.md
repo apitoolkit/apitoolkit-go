@@ -96,7 +96,7 @@ func main() {
 	// Add the apitoolkit gin middleware to monitor http requests
 	// And report errors to apitoolkit
 	r.Use(apitoolkitgin.Middleware(apitoolkitgin.Config{
-		Debug:               true,
+		Debug:               false,
 		ServiceName:         "example-chi-server",
 		ServiceVersion:      "0.0.1",
 		Tags:                []string{"env:dev"},

@@ -86,7 +86,7 @@ func main() {
 	// Add the apitoolkit chi middleware to monitor http requests
 	// And report errors to apitoolkit
 	r.Use(apitoolkitchi.Middleware(apitoolkitchi.Config{
-		Debug:               true,
+		Debug:               false,
 		ServiceName:         "example-chi-server",
 		ServiceVersion:      "0.0.1",
 		Tags:                []string{"env:dev"},

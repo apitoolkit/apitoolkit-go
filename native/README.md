@@ -96,12 +96,12 @@ func main() {
 	})
 
 	nativeMiddleware := apitoolkitnative.Middleware(apitoolkitnative.Config{
-		Debug:               true,
+		Debug:               false,
 		ServiceName:         "example-chi-server",
 		ServiceVersion:      "0.0.1",
 		Tags:                []string{"env:dev"},
-		CaptureRequestBody:  true,
-		CaptureResponseBody: true,
+		CaptureRequestBody:  false,
+		CaptureResponseBody: false,
 		RedactHeaders:       []string{"Authorization", "X-Api-Key"},
 		RedactRequestBody:   []string{"password", "credit_card"},
 		RedactResponseBody:  []string{"password", "credit_card"},

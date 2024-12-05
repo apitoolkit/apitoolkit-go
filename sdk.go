@@ -73,6 +73,14 @@ func CreateSpan(payload Payload, config Config, span trace.Span) {
 	atErrors, _ := json.Marshal(payload.Errors)
 	queryParams, _ := json.Marshal(payload.QueryParams)
 	pathParams, _ := json.Marshal(payload.PathParams)
+	requestBody := ""
+	if config.CaptureRequestBody {
+		requestBody = string(payload.RequestBody)
+	}
+	responseBody := ""
+	if config.CaptureResponseBody {
+		responseBody = string(payload.ResponseBody)
+	}
 	attrs := []attribute.KeyValue{
 		{Key: "apitoolkit.service_version", Value: attribute.StringValue(config.ServiceVersion)},
 		{Key: "net.host.name", Value: attribute.StringValue(payload.Host)},
@@ -83,8 +91,8 @@ func CreateSpan(payload Payload, config Config, span trace.Span) {
 		{Key: "http.request.path_params", Value: attribute.StringValue(string(pathParams))},
 		{Key: "apitoolkit.msg_id", Value: attribute.StringValue(payload.MsgID)},
 		{Key: "apitoolkit.sdk_type", Value: attribute.StringValue(payload.SdkType)},
-		{Key: "http.request.body", Value: attribute.StringValue(string(payload.RequestBody))},
-		{Key: "http.response.body", Value: attribute.StringValue(string(payload.ResponseBody))},
+		{Key: "http.request.body", Value: attribute.StringValue(requestBody)},
+		{Key: "http.response.body", Value: attribute.StringValue(responseBody)},
 		{Key: "apitoolkit.errors", Value: attribute.StringValue(string(atErrors))},
 		{Key: "apitoolkit.tags", Value: attribute.StringSliceValue(payload.Tags)},
 	}

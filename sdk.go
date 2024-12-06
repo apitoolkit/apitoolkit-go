@@ -2,6 +2,7 @@ package apitoolkit
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -76,28 +77,29 @@ func CreateSpan(payload Payload, config Config) {
 	atErrors, _ := json.Marshal(payload.Errors)
 	queryParams, _ := json.Marshal(payload.QueryParams)
 	pathParams, _ := json.Marshal(payload.PathParams)
-	requestBody := ""
+	requestBody := []byte{}
 	if config.CaptureRequestBody {
-		requestBody = string(payload.RequestBody)
+		requestBody = payload.RequestBody
 	}
-	responseBody := ""
+	responseBody := []byte{}
 	if config.CaptureResponseBody {
-		responseBody = string(payload.ResponseBody)
+		responseBody = payload.ResponseBody
 	}
 	attrs := []attribute.KeyValue{
-		{Key: "apitoolkit.service_version", Value: attribute.StringValue(config.ServiceVersion)},
-		{Key: "net.host.name", Value: attribute.StringValue(payload.Host)},
-		{Key: "http.route", Value: attribute.StringValue(payload.URLPath)},
-		{Key: "http.request.method", Value: attribute.StringValue(payload.Method)},
-		{Key: "http.response.status_code", Value: attribute.IntValue(payload.StatusCode)},
-		{Key: "http.request.query_params", Value: attribute.StringValue(string(queryParams))},
-		{Key: "http.request.path_params", Value: attribute.StringValue(string(pathParams))},
-		{Key: "apitoolkit.msg_id", Value: attribute.StringValue(payload.MsgID)},
-		{Key: "apitoolkit.sdk_type", Value: attribute.StringValue(payload.SdkType)},
-		{Key: "http.request.body", Value: attribute.StringValue(requestBody)},
-		{Key: "http.response.body", Value: attribute.StringValue(responseBody)},
-		{Key: "apitoolkit.errors", Value: attribute.StringValue(string(atErrors))},
-		{Key: "apitoolkit.tags", Value: attribute.StringSliceValue(payload.Tags)},
+		attribute.String("apitoolkit.service_version", config.ServiceVersion),
+		attribute.String("net.host.name", payload.Host),
+		attribute.String("http.route", payload.URLPath),
+		attribute.String("http.request.method", payload.Method),
+		attribute.Int("http.response.status_code", payload.StatusCode),
+		attribute.String("http.request.query_params", string(queryParams)),
+		attribute.String("http.target", payload.RawURL),
+		attribute.String("http.request.path_params", string(pathParams)),
+		attribute.String("apitoolkit.msg_id", payload.MsgID),
+		attribute.String("apitoolkit.sdk_type", payload.SdkType),
+		attribute.String("http.request.body", base64.StdEncoding.EncodeToString(requestBody)),
+		attribute.String("http.response.body", base64.StdEncoding.EncodeToString(responseBody)),
+		attribute.String("apitoolkit.errors", string(atErrors)),
+		attribute.StringSlice("apitoolkit.tags", payload.Tags),
 	}
 	span.SetAttributes(attrs...)
 
@@ -249,6 +251,7 @@ func BuildFastHTTPPayload(SDKType string, req *fasthttp.RequestCtx,
 	if config.ServiceVersion != "" {
 		serviceVersion = &config.ServiceVersion
 	}
+
 	return Payload{
 		Host:            string(req.Host()),
 		Method:          string(req.Method()),

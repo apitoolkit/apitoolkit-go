@@ -50,23 +50,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
-func initTracer() (*trace.TracerProvider, error) {
-	exporter, err := otlptracegrpc.New(context.Background(), otlptracegrpc.WithEndpoint("otelcol.apitoolkit.io:4317"), otlptracegrpc.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
-	res, err := resource.New(context.Background(), resource.WithAttributes(
-			semconv.ServiceNameKey.String("example-chi-server"),
-			attribute.KeyValue{Key: "at-project-key", Value: attribute.StringValue("<YOUR_API_KEY>")},
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	tp := trace.NewTracerProvider(trace.WithBatcher(exporter), trace.WithResource(res))
-	otel.SetTracerProvider(tp)
-	return tp, nil
-}
 
 func main() {
 	tp, err := initTracer()

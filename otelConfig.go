@@ -1,4 +1,4 @@
-package otelConfig
+package apitoolkit
 
 import (
 	"context"
@@ -25,9 +25,9 @@ import (
 
 const APITOOLKIT_ENDPOINT = "otelcol.apitoolkit.io:4317"
 
-type Option func(*Config)
+type Option func(*OConfig)
 
-type Config struct {
+type OConfig struct {
 	TracesEnabled            *bool             `env:"OTEL_TRACES_ENABLED,default=true"`
 	ExporterEndpoint         string            `env:"OTEL_EXPORTER_OTLP_ENDPOINT,overwrite"`
 	ExporterEndpointInsecure bool              `env:"OTEL_EXPORTER_OTLP_INSECURE"`
@@ -42,7 +42,7 @@ type Config struct {
 	Sampler                  trace.Sampler
 	ResourceOptions          []resource.Option
 	Resource                 *resource.Resource
-	errorHandler             otel.ErrorHandler
+	ErrorHandler             otel.ErrorHandler
 }
 
 func ConfigureOpenTelemetry(opts ...Option) (func(), error) {
@@ -58,15 +58,15 @@ func ConfigureOpenTelemetry(opts ...Option) (func(), error) {
 		log.Println(string(s))
 	}
 
-	if c.errorHandler != nil {
-		otel.SetErrorHandler(c.errorHandler)
+	if c.ErrorHandler != nil {
+		otel.SetErrorHandler(c.ErrorHandler)
 	}
 
 	otelConfig := OtelConfig{
 		config: c,
 	}
 
-	type setupFunc func(*Config) (func() error, error)
+	type setupFunc func(*OConfig) (func() error, error)
 
 	for _, setup := range []setupFunc{setupTracing, setupMetrics} {
 		shutdown, err := setup(c)
@@ -80,7 +80,7 @@ func ConfigureOpenTelemetry(opts ...Option) (func(), error) {
 	return otelConfig.Shutdown, nil
 }
 
-func setupTracing(c *Config) (func() error, error) {
+func setupTracing(c *OConfig) (func() error, error) {
 	var enabled bool
 	if c.TracesEnabled == nil {
 		enabled = true
@@ -125,7 +125,7 @@ func setupTracing(c *Config) (func() error, error) {
 	}, nil
 }
 
-func setupMetrics(c *Config) (func() error, error) {
+func setupMetrics(c *OConfig) (func() error, error) {
 	var enabled bool
 	if c.MetricsEnabled == nil {
 		enabled = true
@@ -176,8 +176,8 @@ func setupMetrics(c *Config) (func() error, error) {
 	}, nil
 }
 
-func newConfig(opts ...Option) (*Config, error) {
-	c := &Config{
+func newConfig(opts ...Option) (*OConfig, error) {
+	c := &OConfig{
 		ResourceAttributes: map[string]string{},
 		Sampler:            trace.AlwaysSample(),
 		ExporterEndpoint:   APITOOLKIT_ENDPOINT,
@@ -207,7 +207,7 @@ func newConfig(opts ...Option) (*Config, error) {
 }
 
 type OtelConfig struct {
-	config        *Config
+	config        *OConfig
 	shutdownFuncs []func() error
 }
 
@@ -219,7 +219,7 @@ func (otel *OtelConfig) Shutdown() {
 	}
 }
 
-func newResource(c *Config) (*resource.Resource, error) {
+func newResource(c *OConfig) (*resource.Resource, error) {
 	options := []resource.Option{
 		resource.WithSchemaURL(semconv.SchemaURL),
 	}
@@ -252,24 +252,24 @@ func newResource(c *Config) (*resource.Resource, error) {
 }
 
 func WithServiceName(name string) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.ServiceName = name
 	}
 }
 func WithServiceVersion(version string) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.ServiceVersion = version
 	}
 }
 
 func WithLogLevel(loglevel string) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.LogLevel = loglevel
 	}
 }
 
 func WithResourceAttributes(attributes map[string]string) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		for k, v := range attributes {
 			c.ResourceAttributes[k] = v
 		}
@@ -277,13 +277,13 @@ func WithResourceAttributes(attributes map[string]string) Option {
 }
 
 func WithResourceOption(option resource.Option) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.ResourceOptions = append(c.ResourceOptions, option)
 	}
 }
 
 func WithPropagators(propagators []string) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.Propagators = propagators
 	}
 }
@@ -291,37 +291,37 @@ func WithPropagators(propagators []string) Option {
 // Configures a global error handler to be used throughout an OpenTelemetry instrumented project.
 // See "go.opentelemetry.io/otel".
 func WithErrorHandler(handler otel.ErrorHandler) Option {
-	return func(c *Config) {
-		c.errorHandler = handler
+	return func(c *OConfig) {
+		c.ErrorHandler = handler
 	}
 }
 
 func WithMetricsReportingPeriod(p time.Duration) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.MetricsReportingPeriod = fmt.Sprint(p)
 	}
 }
 
 func WithMetricsEnabled(enabled bool) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.MetricsEnabled = &enabled
 	}
 }
 
 func WithTracesEnabled(enabled bool) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.TracesEnabled = &enabled
 	}
 }
 
 func WithSpanProcessor(sp ...trace.SpanProcessor) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.SpanProcessors = append(c.SpanProcessors, sp...)
 	}
 }
 
 func WithSampler(sampler trace.Sampler) Option {
-	return func(c *Config) {
+	return func(c *OConfig) {
 		c.Sampler = sampler
 	}
 }

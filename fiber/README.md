@@ -30,63 +30,40 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/fiber
 ```
 
+## Configuration
+
+Next, set up your envrironment variables
+
+```sh
+OTEL_RESOURCE_ATTRIBUTES=at-project-key=<YOUR_API_KEY> # Your apitoolkit API key
+OTEL_SERVICE_NAME="apitoolkit-otel-go-demo" # Service name for your the service you're integrating in
+OTEL_SERVICE_VERSION="0.0.1" # Your application's service version
+```
+
 Then set it up in your project like so:
 
 ```go
 package main
 
 import (
-	"context"
 	"log"
 
 	apitoolkit "github.com/apitoolkit/apitoolkit-go/fiber"
 	"github.com/gofiber/fiber/v2"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"github.com/joho/godotenv"
 )
 
-func initTracer() (*trace.TracerProvider, error) {
-	exporter, err := otlptracegrpc.New(
-		context.Background(),
-		otlptracegrpc.WithEndpoint("otecol.apitoolkit.io:4317"),
-		otlptracegrpc.WithInsecure(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := resource.New(context.Background(),
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String("example-chi-server"),
-			attribute.KeyValue{Key: "at-project-key", Value: attribute.StringValue("YOUR_API_KEY")},
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	tp := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(res),
-	)
-	otel.SetTracerProvider(tp)
-	return tp, nil
-}
-
 func main() {
-	tp, err := initTracer()
+	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("failed to initialize tracer: %v", err)
+		log.Printf("Error loading .env file: %v", err)
 	}
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("error shutting down tracer: %v", err)
-		}
-	}()
+	shutdown, err := apitoolkit.ConfigureOpenTelemetry()
+	if err != nil {
+		log.Printf("error configuring openTelemetry: %v", err)
+
+	}
+	defer shutdown()
 
 	app := fiber.New()
 
@@ -98,11 +75,12 @@ func main() {
 		Tags:                []string{"env:dev"},
 		CaptureRequestBody:  true,
 		CaptureResponseBody: true,
-		RedactHeaders:       []string{"Authorization", "X-Api-Key"},
-		RedactRequestBody:   []string{"password", "credit_card"},
-		RedactResponseBody:  []string{"password", "credit_card"},
+		RedactHeaders:       []string{"Authorization", "X-Api-Key"}, // Example headers to redact
+		RedactRequestBody:   []string{"$.password", "$.account.credit_card"}, // Example request body fields to redact (in jsonpath)
+		RedactResponseBody:  []string{"$.password", "$.user.credit_card"}, // Example response body fields to redact (in jsonpath)
 	}))
 
+	// Define a route for Hello World
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"message": "Hello, World!",
@@ -111,7 +89,6 @@ func main() {
 
 	app.Listen(":3000")
 }
-
 ```
 
 > [!IMPORTANT]

@@ -30,69 +30,46 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/echo
 ```
 
+## Configuration
+
+Next, set up your envrironment variables
+
+```sh
+OTEL_RESOURCE_ATTRIBUTES=at-project-key=<YOUR_API_KEY> # Your apitoolkit API key
+OTEL_SERVICE_NAME="apitoolkit-otel-go-demo" # Service name for your the service you're integrating in
+OTEL_SERVICE_VERSION="0.0.1" # Your application's service version
+```
+
 Then set it up in your project like so:
 
 ```go
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
 
-	apitoolkitecho "github.com/apitoolkit/apitoolkit-go/echo"
+	apitoolkit "github.com/apitoolkit/apitoolkit-go/echo"
 	"github.com/labstack/echo/v4"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"github.com/joho/godotenv"
 )
 
-func initTracer() (*trace.TracerProvider, error) {
-	exporter, err := otlptracegrpc.New(
-		context.Background(),
-		otlptracegrpc.WithEndpoint("otelcol.apitoolkit.io:4317"),
-		otlptracegrpc.WithInsecure(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := resource.New(context.Background(),
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String("example-chi-server"),
-			attribute.KeyValue{Key: "at-project-key", Value: attribute.StringValue("YOUR_API_KEY")},
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	tp := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(res),
-	)
-	otel.SetTracerProvider(tp)
-	return tp, nil
-}
 
 func main() {
-	tp, err := initTracer()
+	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("failed to initialize tracer: %v", err)
+		log.Printf("Error loading .env file: %v", err)
 	}
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("error shutting down tracer: %v", err)
-		}
-	}()
+	shutdown, err := apitoolkit.ConfigureOpenTelemetry()
+	if err != nil {
+		log.Printf("error configuring openTelemetry: %v", err)
+
+	}
+	defer shutdown()
 
 	router := echo.New()
 
 	// Register APItoolkit's middleware
-	router.Use(apitoolkitecho.Middleware(apitoolkitecho.Config{
+	router.Use(apitoolkit.Middleware(apitoolkit.Config{
 		Debug:               false,
 		ServiceName:         "example-chi-server",
 		ServiceVersion:      "0.0.1",

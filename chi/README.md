@@ -30,45 +30,46 @@ Kindly run the command below to install the SDK:
 go get github.com/apitoolkit/apitoolkit-go/chi
 ```
 
-Then add `github.com/apitoolkit/apitoolkit-go/chi` to the list of dependencies like so:
+## Configuration
+
+Next, set up your envrironment variables
+
+```sh
+OTEL_RESOURCE_ATTRIBUTES=at-project-key=<YOUR_API_KEY> # Your apitoolkit API key (required)
+OTEL_SERVICE_NAME="apitoolkit-otel-go-demo" # Service name for your the service you're integrating in
+OTEL_SERVICE_VERSION="0.0.1" # Your application's service version
+```
+
+Then set it up in your project like so:
 
 ```go
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
 
-	apitoolkitchi "github.com/apitoolkit/apitoolkit-go/chi"
+	apitoolkit "github.com/apitoolkit/apitoolkit-go/chi"
 	"github.com/go-chi/chi/v5"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+  "github.com/joho/godotenv"
 )
 
-
 func main() {
-	tp, err := initTracer()
+	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("failed to initialize tracer: %v", err)
+		log.Printf("Error loading .env file: %v", err)
 	}
+	shutdown, err := apitoolkit.ConfigureOpenTelemetry()
+	if err != nil {
+		log.Printf("error configuring openTelemetry: %v", err)
 
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("error shutting down tracer: %v", err)
-		}
-	}()
+	}
+	defer shutdown()
 
-	tracer := otel.Tracer("example-chi-server")
-	r := chi.NewRouter()
+  r := chi.NewRouter()
 
 	// Add the apitoolkit chi middleware to monitor http requests
 	// And report errors to apitoolkit
-	r.Use(apitoolkitchi.Middleware(apitoolkitchi.Config{
+	r.Use(apitoolkit.Middleware(apitoolkit.Config{
 		Debug:               false,
 		ServiceName:         "example-chi-server",
 		ServiceVersion:      "0.0.1",

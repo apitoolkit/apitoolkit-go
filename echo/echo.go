@@ -137,6 +137,7 @@ func Middleware(config Config) echo.MiddlewareFunc {
 }
 
 func ConfigureOpenTelemetry(opts ...otelconfig.Option) (func(), error) {
+	opts = append([]otelconfig.Option{otelconfig.WithExporterEndpoint("otelcol.apitoolkit.io:4317"), otelconfig.WithExporterInsecure(true)}, opts...)
 	return otelconfig.ConfigureOpenTelemetry(opts...)
 }
 

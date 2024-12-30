@@ -11,8 +11,6 @@
 
 </div>
 
-Here's the Go version:
-
 ---
 
 # APItoolkit Go SDKs

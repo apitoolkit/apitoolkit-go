@@ -29,3 +29,21 @@ Discover detailed and comprehensive documentation for each SDK here:
 - [Go native Documentation](https://apitoolkit.io/docs/sdks/golang/native?utm_campaign=devrel&utm_medium=github&utm_source=sdks_readme)
 
 ---
+## Contributing and Help
+
+To contribute to the development of this project or request help from the community and our team, kindly do any of the following:
+- Read our [Contributors Guide](https://github.com/apitoolkit/.github/blob/main/CONTRIBUTING.md).
+- Join our community [Discord Server](https://discord.gg/dEB6EjQnKB).
+- Create a [new issue](https://github.com/apitoolkit/apitoolkit-landing/issues/new/choose) in this repository.
+
+## License
+
+This repository is published under the [MIT](LICENSE) license.
+
+---
+
+<div align="center">
+    
+<a href="https://apitoolkit.io?utm_source=github-sdks" target="_blank" rel="noopener noreferrer"><img src="https://github.com/apitoolkit/.github/blob/main/images/icon.png?raw=true" width="40" /></a>
+
+</div>

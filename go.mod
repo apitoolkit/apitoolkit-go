@@ -1,10 +1,9 @@
-module github.com/apitoolkit/apitoolkit-go/v3
+module github.com/apitoolkit/apitoolkit-go
 
 go 1.22.3
 
 require (
 	github.com/AsaiYusuke/jsonpath v1.6.0
-	github.com/apitoolkit/apitoolkit-go v0.0.0-20250301231913-154aa1f9edd2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-errors/errors v1.5.1
 	github.com/valyala/fasthttp v1.51.0

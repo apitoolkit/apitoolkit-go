@@ -9,7 +9,7 @@ import (
 	"net"
 	"net/http"
 
-	apt "github.com/apitoolkit/apitoolkit-go/v3"
+	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"
 	"github.com/labstack/echo/v4"

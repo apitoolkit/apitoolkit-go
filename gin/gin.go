@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 
-	apt "github.com/apitoolkit/apitoolkit-go/v3"
+	apt "github.com/apitoolkit/apitoolkit-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"

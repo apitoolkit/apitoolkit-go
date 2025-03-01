@@ -2,8 +2,6 @@ github.com/AsaiYusuke/jsonpath v1.6.0 h1:YagKI8icTdxHujVwsgmL4Cm3DYm36g+ymp9PTMX
 github.com/AsaiYusuke/jsonpath v1.6.0/go.mod h1:XblL8QLThYDIvcQkFJJXDqfry/XAkMYEIOItWRZtz1s=
 github.com/andybalholm/brotli v1.0.5 h1:8uQZIdzKmjc/iuPu7O2ioW48L81FgatrcpfFmiq/cCs=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
-github.com/apitoolkit/apitoolkit-go v0.0.0-20250301231913-154aa1f9edd2 h1:IBqnnJf7sSSluBZeacaZSpYCewcVXGjRWiDYFXXjtnM=
-github.com/apitoolkit/apitoolkit-go v0.0.0-20250301231913-154aa1f9edd2/go.mod h1:DuOUI6k5kAnxuDeU5ThUiuVk4VySClt9IBX8ueWLvZs=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=
 github.com/bytedance/sonic v1.11.6/go.mod h1:LysEHSvpvDySVdC2f87zGWf6CIKJcAvqab1ZaiQtds4=
 github.com/bytedance/sonic/loader v0.1.1 h1:c+e5Pt1k/cy5wMveRDyk2X4B9hF4g7an8N3zCYjJFNM=

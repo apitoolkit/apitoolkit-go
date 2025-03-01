@@ -2,6 +2,8 @@ github.com/AsaiYusuke/jsonpath v1.6.0 h1:YagKI8icTdxHujVwsgmL4Cm3DYm36g+ymp9PTMX
 github.com/AsaiYusuke/jsonpath v1.6.0/go.mod h1:XblL8QLThYDIvcQkFJJXDqfry/XAkMYEIOItWRZtz1s=
 github.com/andybalholm/brotli v1.0.5 h1:8uQZIdzKmjc/iuPu7O2ioW48L81FgatrcpfFmiq/cCs=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
+github.com/apitoolkit/apitoolkit-go v0.0.0-20250301231913-154aa1f9edd2 h1:IBqnnJf7sSSluBZeacaZSpYCewcVXGjRWiDYFXXjtnM=
+github.com/apitoolkit/apitoolkit-go v0.0.0-20250301231913-154aa1f9edd2/go.mod h1:DuOUI6k5kAnxuDeU5ThUiuVk4VySClt9IBX8ueWLvZs=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=
 github.com/bytedance/sonic v1.11.6/go.mod h1:LysEHSvpvDySVdC2f87zGWf6CIKJcAvqab1ZaiQtds4=
 github.com/bytedance/sonic/loader v0.1.1 h1:c+e5Pt1k/cy5wMveRDyk2X4B9hF4g7an8N3zCYjJFNM=
@@ -136,6 +138,8 @@ github.com/valyala/tcplisten v1.0.0 h1:rBHj/Xf+E1tRGZyWIWwJDiRY0zc1Js+CV5DqwacVS
 github.com/valyala/tcplisten v1.0.0/go.mod h1:T0xQ8SeCZGxckz9qRXTfG43PvQ/mcWh7FwZEA7Ioqkc=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
+go.opentelemetry.io/contrib/detectors/aws/lambda v0.53.0 h1:KG6fOUk3EwSH1dEpsAbsLKFbn3cFwN9xDu8plGu55zI=
+go.opentelemetry.io/contrib/detectors/aws/lambda v0.53.0/go.mod h1:bSd579exEkh/P5msRcom8YzVB6NsUxYKyV+D/FYOY7Y=
 go.opentelemetry.io/contrib/instrumentation/host v0.57.0 h1:1gfzOyXEuCrrwCXF81LO3DQ4rll6YBKfAQHPl+03mik=
 go.opentelemetry.io/contrib/instrumentation/host v0.57.0/go.mod h1:pHBt+1Rhz99VBX7AQVgwcKPf611zgD6pQy7VwBNMFmE=
 go.opentelemetry.io/contrib/instrumentation/runtime v0.57.0 h1:kJB5wMVorwre8QzEodzTAbzm9FOOah0zvG+V4abNlEE=

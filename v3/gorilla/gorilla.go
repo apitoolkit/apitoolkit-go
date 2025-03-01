@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	apt "github.com/apitoolkit/apitoolkit-go"
+	apt "github.com/apitoolkit/apitoolkit-go/v3"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/honeycombio/otel-config-go/otelconfig"

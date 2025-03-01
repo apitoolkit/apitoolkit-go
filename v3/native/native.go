@@ -13,7 +13,7 @@ import (
 	"github.com/honeycombio/otel-config-go/otelconfig"
 	"go.opentelemetry.io/otel"
 
-	apt "github.com/apitoolkit/apitoolkit-go"
+	apt "github.com/apitoolkit/apitoolkit-go/v3"
 )
 
 type Config struct {

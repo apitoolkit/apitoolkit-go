@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	apt "github.com/apitoolkit/apitoolkit-go"
+	apt "github.com/apitoolkit/apitoolkit-go/v3"
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"

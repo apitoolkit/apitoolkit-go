@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel"
 )
 
 // bodyDumpResponseWriter use to preserve the http response body during request processing
@@ -57,16 +58,18 @@ func ReportError(ctx context.Context, err error) {
 func Middleware(config Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) (err error) {
-			// Register the client in the context,
-			// so it can be used for outgoing requests with little ceremony
+			tracer := otel.GetTracerProvider().Tracer(config.ServiceName)
+			newCtx, span := tracer.Start(ctx.Request().Context(), "apitoolkit-http-span")
 
 			msgID := uuid.Must(uuid.NewRandom())
 			ctx.Set(string(apt.CurrentRequestMessageID), msgID)
 
 			errorList := []apt.ATError{}
 			ctx.Set(string(apt.ErrorListCtxKey), &errorList)
-			newCtx := context.WithValue(ctx.Request().Context(), apt.ErrorListCtxKey, &errorList)
+			newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
 			newCtx = context.WithValue(newCtx, apt.CurrentRequestMessageID, msgID)
+
+			// add span context to the request context
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 
 			var reqBuf []byte
@@ -111,7 +114,7 @@ func Middleware(config Config) echo.MiddlewareFunc {
 						nil,
 						aptConfig,
 					)
-					apt.CreateSpan(payload, aptConfig)
+					apt.CreateSpan(payload, aptConfig, span)
 					panic(err)
 				}
 			}()
@@ -130,7 +133,7 @@ func Middleware(config Config) echo.MiddlewareFunc {
 				nil,
 				aptConfig,
 			)
-			apt.CreateSpan(payload, aptConfig)
+			apt.CreateSpan(payload, aptConfig, span)
 			return err
 		}
 	}

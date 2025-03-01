@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"
+	"go.opentelemetry.io/otel"
 )
 
 type Config struct {
@@ -46,13 +47,15 @@ func ReportError(ctx context.Context, err error) {
 
 func Middleware(config Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Register the client in the context,
-		// so it can be used for outgoing requests with little ceremony
+		newCtx := ctx.Request.Context()
+		tracer := otel.GetTracerProvider().Tracer(config.ServiceName)
+		newCtx, span := tracer.Start(newCtx, "apitoolkit-http-span")
+
 		msgID := uuid.Must(uuid.NewRandom())
 		ctx.Set(string(apt.CurrentRequestMessageID), msgID)
 		errorList := []apt.ATError{}
 		ctx.Set(string(apt.ErrorListCtxKey), &errorList)
-		newCtx := context.WithValue(ctx.Request.Context(), apt.ErrorListCtxKey, &errorList)
+		newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
 		newCtx = context.WithValue(newCtx, apt.CurrentRequestMessageID, msgID)
 		ctx.Request = ctx.Request.WithContext(newCtx)
 
@@ -84,7 +87,7 @@ func Middleware(config Config) gin.HandlerFunc {
 					nil,
 					aptConfig,
 				)
-				apt.CreateSpan(payload, aptConfig)
+				apt.CreateSpan(payload, aptConfig, span)
 				panic(err)
 			}
 		}()
@@ -102,7 +105,7 @@ func Middleware(config Config) gin.HandlerFunc {
 		if config.Debug {
 			log.Println(payload)
 		}
-		apt.CreateSpan(payload, aptConfig)
+		apt.CreateSpan(payload, aptConfig, span)
 
 	}
 }

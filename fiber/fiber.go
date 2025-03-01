@@ -8,6 +8,7 @@ import (
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"
+	"go.opentelemetry.io/otel"
 )
 
 type Config struct {
@@ -38,16 +39,19 @@ func getAptConfig(config Config) apt.Config {
 
 func Middleware(config Config) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		// Register the client in the context,
-		// so it can be used for outgoing requests with little ceremony
+		baseCtx := ctx.UserContext()
+		tracer := otel.GetTracerProvider().Tracer(config.ServiceName)
+		newCtx, span := tracer.Start(baseCtx, "apitoolkit-http-span")
 
 		msgID := uuid.Must(uuid.NewRandom())
 		ctx.Locals(string(apt.CurrentRequestMessageID), msgID)
 		errorList := []apt.ATError{}
 		ctx.Locals(string(apt.ErrorListCtxKey), &errorList)
-		newCtx := context.WithValue(ctx.Context(), apt.ErrorListCtxKey, &errorList)
+
+		newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
 		newCtx = context.WithValue(newCtx, apt.CurrentRequestMessageID, msgID)
 		ctx.SetUserContext(newCtx)
+
 		respHeaders := map[string][]string{}
 		for k, v := range ctx.GetRespHeaders() {
 			respHeaders[k] = v
@@ -70,7 +74,7 @@ func Middleware(config Config) fiber.Handler {
 					string(ctx.Context().Referer()),
 					aptConfig,
 				)
-				apt.CreateSpan(payload, aptConfig)
+				apt.CreateSpan(payload, aptConfig, span)
 				panic(err)
 			}
 		}()
@@ -88,7 +92,7 @@ func Middleware(config Config) fiber.Handler {
 			aptConfig,
 		)
 
-		apt.CreateSpan(payload, aptConfig)
+		apt.CreateSpan(payload, aptConfig, span)
 		return err
 	}
 }

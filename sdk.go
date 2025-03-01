@@ -1,7 +1,6 @@
 package apitoolkit
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"log"
@@ -11,8 +10,8 @@ import (
 	"github.com/AsaiYusuke/jsonpath"
 	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -69,11 +68,8 @@ type Config struct {
 	CaptureResponseBody bool
 }
 
-func CreateSpan(payload Payload, config Config) {
-	tracer := otel.GetTracerProvider().Tracer(config.ServiceName)
-	_, span := tracer.Start(context.Background(), "apitoolkit-http-span")
+func CreateSpan(payload Payload, config Config, span trace.Span) {
 	defer span.End()
-
 	atErrors, _ := json.Marshal(payload.Errors)
 	queryParams, _ := json.Marshal(payload.QueryParams)
 	pathParams, _ := json.Marshal(payload.PathParams)

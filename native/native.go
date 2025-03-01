@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/honeycombio/otel-config-go/otelconfig"
+	"go.opentelemetry.io/otel"
 
 	apt "github.com/apitoolkit/apitoolkit-go"
 )
@@ -35,8 +36,12 @@ func ReportError(ctx context.Context, err error) {
 func Middleware(config Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+
+			tracer := otel.GetTracerProvider().Tracer(config.ServiceName)
+			newCtx, span := tracer.Start(req.Context(), "apnewCtxitoolkit-http-span")
+
 			msgID := uuid.Must(uuid.NewRandom())
-			newCtx := context.WithValue(req.Context(), apt.CurrentRequestMessageID, msgID)
+			newCtx = context.WithValue(newCtx, apt.CurrentRequestMessageID, msgID)
 
 			errorList := []apt.ATError{}
 			newCtx = context.WithValue(newCtx, apt.ErrorListCtxKey, &errorList)
@@ -89,7 +94,7 @@ func Middleware(config Config) func(http.Handler) http.Handler {
 			if config.Debug {
 				log.Printf("payload: %+v\n", payload)
 			}
-			apt.CreateSpan(payload, aptConfig)
+			apt.CreateSpan(payload, aptConfig, span)
 		})
 	}
 }

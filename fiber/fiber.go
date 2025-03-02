@@ -3,6 +3,7 @@ package apitoolkitfiber
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	apt "github.com/apitoolkit/apitoolkit-go"
 	fiber "github.com/gofiber/fiber/v2"
@@ -118,3 +119,11 @@ var WithMetricsEnabled = otelconfig.WithMetricsEnabled
 var WithTracesEnabled = otelconfig.WithTracesEnabled
 var WithSpanProcessor = otelconfig.WithSpanProcessor
 var WithSampler = otelconfig.WithSampler
+
+func HTTPClient(ctx context.Context, opts ...apt.RoundTripperOption) *http.Client {
+	return apt.HTTPClient(ctx, opts...)
+}
+
+var WithRedactHeaders = apt.WithRedactHeaders
+var WithRedactRequestBody = apt.WithRedactRequestBody
+var WithRedactResponseBody = apt.WithRedactResponseBody

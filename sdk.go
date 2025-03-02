@@ -90,7 +90,6 @@ func CreateSpan(payload Payload, config Config, span trace.Span) {
 		attribute.String("http.request.query_params", string(queryParams)),
 		attribute.String("http.target", payload.RawURL),
 		attribute.String("http.request.path_params", string(pathParams)),
-		attribute.String("apitoolkit.msg_id", payload.MsgID),
 		attribute.String("apitoolkit.sdk_type", payload.SdkType),
 		attribute.String("http.request.body", base64.StdEncoding.EncodeToString(requestBody)),
 		attribute.String("http.response.body", base64.StdEncoding.EncodeToString(responseBody)),
@@ -106,6 +105,11 @@ func CreateSpan(payload Payload, config Config, span trace.Span) {
 	for key, value := range payload.ResponseHeaders {
 		span.SetAttributes(attribute.KeyValue{Key: attribute.Key("http.response.header." + key), Value: attribute.StringSliceValue(value)})
 	}
+	if payload.MsgID != "" {
+		span.SetAttributes(attribute.String("apitoolkit.msg_id", payload.MsgID))
+
+	}
+
 }
 
 func RedactJSON(data []byte, redactList []string) []byte {
@@ -179,6 +183,10 @@ func BuildPayload(SDKType string, req *http.Request,
 	if config.ServiceVersion != "" {
 		serviceVersion = &config.ServiceVersion
 	}
+	msgIDStr := ""
+	if msgID != uuid.Nil {
+		msgIDStr = msgID.String()
+	}
 	return Payload{
 		Host:            req.Host,
 		Method:          req.Method,
@@ -198,7 +206,7 @@ func BuildPayload(SDKType string, req *http.Request,
 		Errors:          errorList,
 		ServiceVersion:  serviceVersion,
 		Tags:            config.Tags,
-		MsgID:           msgID.String(),
+		MsgID:           msgIDStr,
 		ParentID:        parentIDVal,
 	}
 }
